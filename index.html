@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitbank Portfolio Manager</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #07090f;
+    --bg2: #0c1018;
+    --bg3: #111620;
+    --border: #1c2535;
+    --border2: #243044;
+    --accent: #3b82f6;
+    --accent2: #1d4ed8;
+    --green: #22c55e;
+    --green2: #16a34a;
+    --red: #ef4444;
+    --red2: #b91c1c;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #475569;
+    --gold: #f59e0b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(180deg, #0c1422 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .logo-area { display: flex; align-items: center; gap: 10px; }
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: blink 2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .logo-text { font-size: 10px; letter-spacing: .3em; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+  .logo-title { font-size: 18px; font-weight: 900; color: var(--text); }
+
+  /* ── API Connect Panel ── */
+  .connect-panel {
+    margin: 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .connect-panel h2 { font-size: 15px; color: var(--accent); margin-bottom: 14px; }
+  .input-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .input-group { flex: 1; min-width: 200px; }
+  .input-label { font-size: 10px; letter-spacing: .2em; color: var(--text3); margin-bottom: 5px; display: block; }
+  .api-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .api-input:focus { border-color: var(--accent); }
+  .api-input::placeholder { color: var(--text3); }
+
+  .btn {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 10px 20px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: .85; }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-sm {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .security-note {
+    background: #0a1a0a;
+    border: 1px solid #1a3a1a;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #86efac;
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    line-height: 1.6;
+  }
+
+  /* ── Status Bar ── */
+  .status-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .dot-green { background: var(--green); animation: blink 1.5s infinite; }
+  .dot-gray { background: var(--text3); }
+  .dot-yellow { background: var(--gold); animation: blink 1s infinite; }
+
+  /* ── Summary Cards ── */
+  .summary-area {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin: 0 20px 20px;
+  }
+  .summary-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .summary-card.accent-card {
+    border-color: var(--accent2);
+    background: linear-gradient(135deg, #0c1830, var(--bg2));
+  }
+  .sc-label { font-size: 10px; letter-spacing: .2em; color: var(--text3); margin-bottom: 4px; }
+  .sc-value { font-size: 22px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+  .sc-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .sc-value.green { color: var(--green); }
+  .sc-value.red { color: var(--red); }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin: 0 20px 16px;
+    background: var(--bg2);
+    border-radius: 10px;
+    padding: 3px;
+    border: 1px solid var(--border);
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 9px 0;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all .2s;
+    background: transparent;
+    color: var(--text3);
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .tab-btn.active {
+    background: var(--accent2);
+    color: white;
+    font-weight: 700;
+  }
+
+  /* ── Section ── */
+  .section { margin: 0 20px; }
+  .section-title {
+    font-size: 10px;
+    letter-spacing: .25em;
+    color: var(--text3);
+    margin-bottom: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── Spot Table ── */
+  .asset-table { width: 100%; border-collapse: collapse; }
+  .asset-table thead th {
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 10px;
+    letter-spacing: .15em;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 400;
+  }
+  .asset-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .asset-table tbody tr:hover { background: var(--bg3); }
+  .asset-table td {
+    padding: 12px 10px;
+    font-size: 13px;
+  }
+  .coin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .coin-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+  .coin-name { font-weight: 700; font-size: 14px; }
+  .coin-full { font-size: 10px; color: var(--text3); }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .gray { color: var(--text3); }
+
+  /* ── Margin Cards ── */
+  .margin-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .margin-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .margin-card.long::before { background: var(--green); }
+  .margin-card.short::before { background: var(--red); }
+
+  .margin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .side-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+  }
+  .side-badge.long { background: #0a2a0a; border: 1px solid var(--green2); color: var(--green); }
+  .side-badge.short { background: #2a0a0a; border: 1px solid var(--red2); color: var(--red); }
+
+  .margin-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .mg-item {
+    background: var(--bg3);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .mg-label { font-size: 10px; color: var(--text3); letter-spacing: .1em; margin-bottom: 2px; }
+  .mg-value { font-size: 14px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .mg-pnl { grid-column: 1 / -1; }
+
+  /* ── Manual Input Area ── */
+  .manual-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .manual-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .manual-input {
+    flex: 1;
+    min-width: 80px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 7px 10px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    outline: none;
+  }
+  .manual-input:focus { border-color: var(--accent); }
+  .manual-select {
+    flex: 1;
+    min-width: 100px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 7px 10px;
+    font-size: 12px;
+    outline: none;
+  }
+  .add-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px dashed var(--border2);
+    border-radius: 8px;
+    color: var(--text3);
+    padding: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all .2s;
+    margin-bottom: 10px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .del-btn {
+    background: transparent;
+    border: 1px solid #2a1a1a;
+    border-radius: 5px;
+    color: #664455;
+    padding: 5px 8px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all .2s;
+    flex-shrink: 0;
+  }
+  .del-btn:hover { border-color: var(--red2); color: var(--red); }
+
+  /* ── Price Ticker ── */
+  .ticker {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .ticker-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ticker-coin { color: var(--text3); font-size: 10px; }
+  .ticker-price { color: var(--text); font-weight: 600; }
+
+  /* ── Error / Loading ── */
+  .error-box {
+    background: #1a0808;
+    border: 1px solid var(--red2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #fca5a5;
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+  .loading-box {
+    text-align: center;
+    padding: 30px;
+    color: var(--text3);
+    font-size: 13px;
+  }
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .result-row:last-child { border-bottom: none; }
+
+  @media (max-width: 480px) {
+    .summary-area { grid-template-columns: 1fr 1fr; }
+    .sc-value { font-size: 18px; }
+    .header { padding: 14px 16px 10px; }
+    .connect-panel, .summary-area, .tabs, .section { margin-left: 12px; margin-right: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo-area">
+      <div class="logo-dot"></div>
+      <div>
+        <div class="logo-text">BITBANK PORTFOLIO</div>
+        <div class="logo-title">資産管理ダッシュボード</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span id="lastUpdate" style="font-size:10px;color:var(--text3);font-family:monospace;"></span>
+      <button class="btn btn-sm" onclick="refreshAll()" id="refreshBtn">🔄 更新</button>
+    </div>
+  </div>
+  <div class="ticker" id="ticker"></div>
+</div>
+
+<!-- API接続パネル -->
+<div class="connect-panel" id="connectPanel">
+  <h2>🔑 ビットバンク API 接続</h2>
+  <div class="input-row">
+    <div class="input-group">
+      <label class="input-label">API KEY</label>
+      <input class="api-input" type="text" id="apiKey" placeholder="APIキーを入力" autocomplete="off">
+    </div>
+    <div class="input-group">
+      <label class="input-label">API SECRET</label>
+      <input class="api-input" type="password" id="apiSecret" placeholder="シークレットキーを入力" autocomplete="off">
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+    <button class="btn" onclick="connectAPI()" id="connectBtn">接続して残高を取得</button>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2);">
+      <input type="checkbox" id="saveKeys" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+      このブラウザにAPIキーを保存する
+    </label>
+  </div>
+  <div class="security-note">
+    🔒 <span>APIキーはこのデバイスのブラウザ内（localStorage）にのみ保存されます。外部サーバーへの送信は一切ありません。「保存する」にチェックを入れると次回から自動接続されます。</span>
+  </div>
+  <div id="savedKeyNotice"></div>
+</div>
+
+<!-- ステータスバー -->
+<div style="margin: 0 20px 16px;" id="statusBar"></div>
+
+<!-- サマリーカード -->
+<div class="summary-area" id="summaryArea" style="display:none;">
+  <div class="summary-card accent-card">
+    <div class="sc-label">スポット評価額</div>
+    <div class="sc-value" id="totalSpot">¥—</div>
+    <div class="sc-sub">保有コイン <span id="coinCount">—</span> 種</div>
+  </div>
+  <div class="summary-card">
+    <div class="sc-label">スポット損益</div>
+    <div class="sc-value" id="totalSpotPnl">¥—</div>
+    <div class="sc-sub" id="totalSpotPct"></div>
+  </div>
+  <div class="summary-card">
+    <div class="sc-label">信用未実現損益</div>
+    <div class="sc-value" id="totalMarginPnl">¥—</div>
+    <div class="sc-sub">手動入力</div>
+  </div>
+</div>
+
+<!-- タブ -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('spot')">📦 スポット</button>
+  <button class="tab-btn" onclick="switchTab('margin')">⚡ 信用</button>
+  <button class="tab-btn" onclick="switchTab('prices')">📊 価格一覧</button>
+</div>
+
+<!-- スポットタブ -->
+<div id="tab-spot" class="section">
+  <div class="section-title">SPOT HOLDINGS</div>
+  <div id="spotContent">
+    <div class="loading-box" style="color:var(--text3);font-size:13px;">APIキーを接続すると残高が自動表示されます</div>
+  </div>
+</div>
+
+<!-- 信用タブ -->
+<div id="tab-margin" class="section" style="display:none;">
+  <div class="section-title">MARGIN POSITIONS — 手動入力</div>
+  <div id="marginCards"></div>
+  <button class="add-btn" onclick="addMarginRow()">＋ ポジションを追加</button>
+  <div class="summary-card" style="margin-top:4px;">
+    <div class="sc-label">信用合計損益</div>
+    <div class="sc-value" id="marginTotal" style="font-size:26px;">¥0</div>
+  </div>
+</div>
+
+<!-- 価格一覧タブ -->
+<div id="tab-prices" class="section" style="display:none;">
+  <div class="section-title">LIVE PRICES — BITBANK</div>
+  <div id="priceTable">
+    <div class="loading-box"><span class="spinner"></span>価格取得中...</div>
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────
+// グローバル状態
+// ──────────────────────────────────────
+let apiKey = '', apiSecret = '';
+let prices = {};
+let spotAssets = [];
+let marginRows = [];
+let marginIdCounter = 1;
+let connected = false;
+
+const COINS = [
+  { id:'btc_jpy', label:'BTC', name:'ビットコイン' },
+  { id:'eth_jpy', label:'ETH', name:'イーサリアム' },
+  { id:'xrp_jpy', label:'XRP', name:'リップル' },
+  { id:'sol_jpy', label:'SOL', name:'ソラナ' },
+  { id:'doge_jpy', label:'DOGE', name:'ドージコイン' },
+  { id:'ada_jpy', label:'ADA', name:'カルダノ' },
+  { id:'dot_jpy', label:'DOT', name:'ポルカドット' },
+  { id:'ltc_jpy', label:'LTC', name:'ライトコイン' },
+  { id:'mona_jpy', label:'MONA', name:'モナコイン' },
+  { id:'bcc_jpy', label:'BCH', name:'ビットコインキャッシュ' },
+  { id:'xlm_jpy', label:'XLM', name:'ステラルーメン' },
+  { id:'link_jpy', label:'LINK', name:'チェーンリンク' },
+  { id:'matic_jpy', label:'MATIC', name:'ポリゴン' },
+  { id:'avax_jpy', label:'AVAX', name:'アバランチ' },
+  { id:'bat_jpy', label:'BAT', name:'ベーシックアテンション' },
+  { id:'enj_jpy', label:'ENJ', name:'エンジン' },
+  { id:'xym_jpy', label:'XYM', name:'シンボル' },
+  { id:'qtum_jpy', label:'QTUM', name:'クアンタム' },
+  { id:'omg_jpy', label:'OMG', name:'オーエムジー' },
+  { id:'flr_jpy', label:'FLR', name:'フレア' },
+  { id:'sand_jpy', label:'SAND', name:'ザ・サンドボックス' },
+  { id:'apt_jpy', label:'APT', name:'アプトス' },
+  { id:'axs_jpy', label:'AXS', name:'アクシー' },
+  { id:'mkr_jpy', label:'MKR', name:'メーカー' },
+];
+
+function fmt(n, d=0) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toLocaleString('ja-JP', { minimumFractionDigits:d, maximumFractionDigits:d });
+}
+function fmtPrice(n) {
+  if (!n) return '—';
+  const v = Number(n);
+  if (v >= 10000) return fmt(v, 0);
+  if (v >= 10) return fmt(v, 2);
+  return fmt(v, 4);
+}
+function pnlColor(v) { return v >= 0 ? 'var(--green)' : 'var(--red)'; }
+function pnlSign(v) { return v >= 0 ? '+' : ''; }
+function coinLabel(pair) {
+  const c = COINS.find(x => x.id === pair);
+  return c ? c.label : pair.toUpperCase().replace('_JPY','');
+}
+
+// ──────────────────────────────────────
+// HMAC-SHA256 署名（Web Crypto API）
+// ──────────────────────────────────────
+async function hmacSHA256(secret, message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret),
+    { name:'HMAC', hash:'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ──────────────────────────────────────
+// Bitbank Private API 呼び出し
+// ──────────────────────────────────────
+async function bitbankRequest(path) {
+  const nonce = Date.now().toString();
+  const message = nonce + path;
+  const signature = await hmacSHA256(apiSecret, message);
+  const res = await fetch('https://api.bitbank.cc' + path, {
+    headers: {
+      'ACCESS-KEY': apiKey,
+      'ACCESS-NONCE': nonce,
+      'ACCESS-SIGNATURE': signature,
+      'Content-Type': 'application/json',
+    }
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if (data.success !== 1) throw new Error(data.data?.code || '不明なエラー');
+  return data.data;
+}
+
+// ──────────────────────────────────────
+// Public API (価格取得)
+// ──────────────────────────────────────
+async function fetchPrices() {
+  const results = {};
+  await Promise.all(COINS.map(async c => {
+    try {
+      const res = await fetch(`https://public.bitbank.cc/${c.id}/ticker`);
+      if (res.ok) {
+        const data = await res.json();
+        results[c.id] = parseFloat(data.data?.last);
+      }
+    } catch {}
+  }));
+  prices = results;
+  updateTicker();
+  updatePriceTable();
+  updateLastUpdate();
+}
+
+// ──────────────────────────────────────
+// API接続
+// ──────────────────────────────────────
+async function connectAPI() {
+  apiKey = document.getElementById('apiKey').value.trim();
+  apiSecret = document.getElementById('apiSecret').value.trim();
+  if (!apiKey || !apiSecret) {
+    alert('APIキーとシークレットキーを両方入力してください');
+    return;
+  }
+  const btn = document.getElementById('connectBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>接続中...';
+  setStatus('connecting');
+  try {
+    const data = await bitbankRequest('/v1/user/assets');
+    spotAssets = (data.assets || []).filter(a => parseFloat(a.onhand_amount) > 0);
+    connected = true;
+
+    // チェックボックスONなら保存
+    if (document.getElementById('saveKeys').checked) {
+      localStorage.setItem('bb_key', apiKey);
+      localStorage.setItem('bb_secret', apiSecret);
+    }
+
+    document.getElementById('connectPanel').style.display = 'none';
+    document.getElementById('summaryArea').style.display = 'grid';
+    setStatus('connected');
+    renderSpotTable();
+    updateSummary();
+    // 入力欄をクリア
+    document.getElementById('apiKey').value = '';
+    document.getElementById('apiSecret').value = '';
+  } catch(e) {
+    setStatus('error', e.message);
+    btn.disabled = false;
+    btn.innerHTML = '接続して残高を取得';
+    console.error(e);
+  }
+}
+
+// ──────────────────────────────────────
+// スポット残高レンダリング
+// ──────────────────────────────────────
+function renderSpotTable() {
+  const el = document.getElementById('spotContent');
+  if (!spotAssets.length) {
+    el.innerHTML = '<div class="loading-box">保有コインがありません</div>';
+    return;
+  }
+
+  const rows = spotAssets.map(a => {
+    const pair = a.asset + '_jpy';
+    const price = prices[pair] || null;
+    const amount = parseFloat(a.onhand_amount) || 0;
+    const currentVal = price ? price * amount : null;
+    return { ...a, pair, price, amount, currentVal };
+  });
+
+  el.innerHTML = `
+    <div style="overflow-x:auto;">
+    <table class="asset-table">
+      <thead>
+        <tr>
+          <th>コイン</th>
+          <th>保有数量</th>
+          <th>現在価格</th>
+          <th>評価額</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td>
+              <div class="coin-badge">
+                <div class="coin-icon">${r.asset.toUpperCase().substring(0,3)}</div>
+                <div>
+                  <div class="coin-name">${r.asset.toUpperCase()}</div>
+                  <div class="coin-full">${COINS.find(c=>c.label===r.asset.toUpperCase())?.name||''}</div>
+                </div>
+              </div>
+            </td>
+            <td class="mono">${fmtPrice(r.amount)}</td>
+            <td class="mono">${r.price ? '¥'+fmtPrice(r.price) : '<span class="gray">—</span>'}</td>
+            <td class="mono" style="font-weight:700;">${r.currentVal ? '¥'+fmt(r.currentVal,0) : '<span class="gray">—</span>'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    </div>
+  `;
+  updateSummary();
+}
+
+// ──────────────────────────────────────
+// サマリー更新
+// ──────────────────────────────────────
+function updateSummary() {
+  let totalSpot = 0;
+  let coinCount = 0;
+  spotAssets.forEach(a => {
+    const pair = a.asset + '_jpy';
+    const price = prices[pair];
+    const amount = parseFloat(a.onhand_amount) || 0;
+    if (price && amount) { totalSpot += price * amount; coinCount++; }
+  });
+  document.getElementById('totalSpot').textContent = totalSpot ? '¥' + fmt(totalSpot, 0) : '¥—';
+  document.getElementById('coinCount').textContent = coinCount;
+
+  // 信用損益
+  let marginTotal = 0;
+  marginRows.forEach(m => {
+    const price = prices[m.pair];
+    const size = parseFloat(m.size) || 0;
+    const entry = parseFloat(m.entry) || 0;
+    if (price && size && entry) {
+      marginTotal += m.side === 'long' ? (price - entry) * size : (entry - price) * size;
+    }
+  });
+  const mtEl = document.getElementById('totalMarginPnl');
+  const mtEl2 = document.getElementById('marginTotal');
+  mtEl.textContent = (marginTotal >= 0 ? '+' : '') + '¥' + fmt(marginTotal, 0);
+  mtEl.style.color = pnlColor(marginTotal);
+  if (mtEl2) {
+    mtEl2.textContent = (marginTotal >= 0 ? '+' : '') + '¥' + fmt(marginTotal, 0);
+    mtEl2.style.color = pnlColor(marginTotal);
+  }
+}
+
+// ──────────────────────────────────────
+// ティッカー
+// ──────────────────────────────────────
+function updateTicker() {
+  const el = document.getElementById('ticker');
+  const show = ['btc_jpy','eth_jpy','xrp_jpy','sol_jpy','doge_jpy'];
+  el.innerHTML = show.map(p => `
+    <div class="ticker-item">
+      <span class="ticker-coin">${coinLabel(p)}</span>
+      <span class="ticker-price">¥${fmtPrice(prices[p])}</span>
+    </div>
+  `).join('');
+}
+
+// ──────────────────────────────────────
+// 価格一覧テーブル
+// ──────────────────────────────────────
+function updatePriceTable() {
+  const el = document.getElementById('priceTable');
+  if (!Object.keys(prices).length) return;
+  el.innerHTML = `
+    <div style="overflow-x:auto;">
+    <table class="asset-table">
+      <thead><tr><th>コイン</th><th>名称</th><th>現在価格(円)</th></tr></thead>
+      <tbody>
+        ${COINS.filter(c => prices[c.id]).map(c => `
+          <tr>
+            <td><div class="coin-badge">
+              <div class="coin-icon">${c.label.substring(0,3)}</div>
+              <strong>${c.label}</strong>
+            </div></td>
+            <td style="color:var(--text3);font-size:12px;">${c.name}</td>
+            <td class="mono" style="font-weight:700;">¥${fmtPrice(prices[c.id])}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    </div>
+  `;
+}
+
+// ──────────────────────────────────────
+// ステータス表示
+// ──────────────────────────────────────
+function setStatus(state, msg='') {
+  const el = document.getElementById('statusBar');
+  if (state === 'connected') {
+    el.innerHTML = `
+      <div class="status-bar">
+        <div class="status-chip"><div class="status-dot dot-green"></div> API接続中</div>
+        <div class="status-chip"><div class="status-dot dot-green"></div> 価格自動更新(30秒)</div>
+        <button class="btn-ghost" onclick="disconnect()">切断</button>
+      </div>`;
+  } else if (state === 'connecting') {
+    el.innerHTML = `<div class="status-bar"><div class="status-chip"><div class="status-dot dot-yellow"></div> 接続中...</div></div>`;
+  } else if (state === 'error') {
+    el.innerHTML = `<div class="error-box">⚠️ 接続エラー: ${msg}<br><small>APIキーとシークレットキーを確認してください。CORSエラーの場合はブラウザのコンソールをご確認ください。</small></div>`;
+  } else {
+    el.innerHTML = `<div class="status-bar"><div class="status-chip"><div class="status-dot dot-gray"></div> 未接続</div></div>`;
+  }
+}
+
+function disconnect() {
+  apiKey = ''; apiSecret = '';
+  connected = false;
+  spotAssets = [];
+  document.getElementById('connectPanel').style.display = 'block';
+  document.getElementById('summaryArea').style.display = 'none';
+  document.getElementById('spotContent').innerHTML = '<div class="loading-box" style="color:var(--text3);font-size:13px;">APIキーを接続すると残高が自動表示されます</div>';
+  // 保存済みキーがあれば削除確認
+  if (localStorage.getItem('bb_key')) {
+    if (confirm('保存されたAPIキーも削除しますか？')) {
+      localStorage.removeItem('bb_key');
+      localStorage.removeItem('bb_secret');
+    }
+  }
+  setStatus('disconnected');
+  showSavedKeyNotice();
+}
+
+// ──────────────────────────────────────
+// 信用ポジション（手動入力）
+// ──────────────────────────────────────
+function addMarginRow(defaults={}) {
+  const id = marginIdCounter++;
+  marginRows.push({
+    id,
+    pair: defaults.pair || 'btc_jpy',
+    side: defaults.side || 'long',
+    size: defaults.size || '',
+    entry: defaults.entry || '',
+    leverage: defaults.leverage || '2',
+  });
+  renderMarginCards();
+}
+
+function updateMarginRow(id, field, val) {
+  marginRows = marginRows.map(m => m.id === id ? { ...m, [field]: val } : m);
+  renderMarginCards();
+  updateSummary();
+}
+
+function removeMarginRow(id) {
+  marginRows = marginRows.filter(m => m.id !== id);
+  renderMarginCards();
+  updateSummary();
+}
+
+function renderMarginCards() {
+  const el = document.getElementById('marginCards');
+  if (!marginRows.length) {
+    el.innerHTML = '';
+    updateSummary();
+    return;
+  }
+
+  el.innerHTML = marginRows.map(m => {
+    const price = prices[m.pair];
+    const size = parseFloat(m.size) || 0;
+    const entry = parseFloat(m.entry) || 0;
+    const lev = parseFloat(m.leverage) || 1;
+    let pnl = null, margin = null, pct = null;
+    if (price && size && entry) {
+      pnl = m.side === 'long' ? (price - entry) * size : (entry - price) * size;
+      margin = (entry * size) / lev;
+      pct = pnl / margin * 100;
+    }
+
+    const coinOptions = COINS.map(c =>
+      `<option value="${c.id}" ${c.id===m.pair?'selected':''}>${c.label}</option>`
+    ).join('');
+
+    return `
+      <div class="margin-card ${m.side}" id="mc_${m.id}">
+        <div class="margin-header">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <span class="side-badge ${m.side}">${m.side==='long'?'▲ LONG':'▼ SHORT'}</span>
+            <strong style="font-size:15px;">${coinLabel(m.pair)}</strong>
+          </div>
+          <button class="del-btn" onclick="removeMarginRow(${m.id})">✕</button>
+        </div>
+        <div class="manual-row">
+          <select class="manual-select" onchange="updateMarginRow(${m.id},'pair',this.value)">${coinOptions}</select>
+          <select class="manual-select" style="color:${m.side==='long'?'var(--green)':'var(--red)'};flex:0 0 90px;" onchange="updateMarginRow(${m.id},'side',this.value)">
+            <option value="long" ${m.side==='long'?'selected':''}>▲ LONG</option>
+            <option value="short" ${m.side==='short'?'selected':''}>▼ SHORT</option>
+          </select>
+        </div>
+        <div class="manual-row">
+          <div style="flex:1;">
+            <label class="mg-label">数量</label>
+            <input class="manual-input" type="number" placeholder="例: 0.1" value="${m.size}" oninput="updateMarginRow(${m.id},'size',this.value)" style="width:100%;">
+          </div>
+          <div style="flex:1;">
+            <label class="mg-label">建値（円）</label>
+            <input class="manual-input" type="number" placeholder="例: 9500000" value="${m.entry}" oninput="updateMarginRow(${m.id},'entry',this.value)" style="width:100%;">
+          </div>
+          <div style="flex:0 0 70px;">
+            <label class="mg-label">レバレッジ</label>
+            <select class="manual-select" onchange="updateMarginRow(${m.id},'leverage',this.value)">
+              ${[1,2,3,4,5,10].map(l=>`<option value="${l}" ${l==m.leverage?'selected':''}>${l}x</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="margin-grid" style="margin-top:8px;">
+          <div class="mg-item">
+            <div class="mg-label">現在価格</div>
+            <div class="mg-value">¥${fmtPrice(price)}</div>
+          </div>
+          <div class="mg-item">
+            <div class="mg-label">必要証拠金(概算)</div>
+            <div class="mg-value">${margin?'¥'+fmt(margin,0):'—'}</div>
+          </div>
+          <div class="mg-item mg-pnl">
+            <div class="mg-label">未実現損益</div>
+            <div class="mg-value" style="font-size:18px;color:${pnl!==null?pnlColor(pnl):'var(--text3)'};">
+              ${pnl !== null ? pnlSign(pnl)+'¥'+fmt(pnl,0) : '—'}
+              ${pct !== null ? `<span style="font-size:12px;margin-left:4px;">(${pnlSign(pct)}${pct.toFixed(2)}%)</span>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  updateSummary();
+}
+
+// ──────────────────────────────────────
+// タブ切替
+// ──────────────────────────────────────
+function switchTab(tab) {
+  ['spot','margin','prices'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t===tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', ['spot','margin','prices'][i] === tab);
+  });
+}
+
+// ──────────────────────────────────────
+// 全体更新
+// ──────────────────────────────────────
+async function refreshAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  await fetchPrices();
+  if (connected) {
+    try {
+      const data = await bitbankRequest('/v1/user/assets');
+      spotAssets = (data.assets || []).filter(a => parseFloat(a.onhand_amount) > 0);
+      renderSpotTable();
+    } catch(e) {
+      console.error('残高更新失敗:', e);
+    }
+  }
+  renderMarginCards();
+  btn.disabled = false;
+  btn.innerHTML = '🔄 更新';
+}
+
+function updateLastUpdate() {
+  const el = document.getElementById('lastUpdate');
+  el.textContent = new Date().toLocaleTimeString('ja-JP') + ' 更新';
+}
+
+// ──────────────────────────────────────
+// 保存済みキー表示
+// ──────────────────────────────────────
+function showSavedKeyNotice() {
+  const el = document.getElementById('savedKeyNotice');
+  if (!el) return;
+  const saved = localStorage.getItem('bb_key');
+  if (saved) {
+    el.innerHTML = `
+      <div style="margin-top:10px;background:#0a1a2a;border:1px solid var(--accent2);border-radius:8px;padding:10px 14px;font-size:12px;color:#7eb8f0;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span>💾 保存済みのAPIキーがあります。自動接続するには「接続」を押してください。</span>
+        <button class="btn-ghost" style="font-size:11px;" onclick="clearSavedKeys()">保存を削除</button>
+      </div>`;
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+function clearSavedKeys() {
+  localStorage.removeItem('bb_key');
+  localStorage.removeItem('bb_secret');
+  showSavedKeyNotice();
+}
+
+// ──────────────────────────────────────
+// 初期化
+// ──────────────────────────────────────
+setStatus('disconnected');
+addMarginRow(); // デフォルト1件
+fetchPrices();
+showSavedKeyNotice();
+
+// 保存済みAPIキーがあれば自動ロード＆自動接続
+const savedKey = localStorage.getItem('bb_key');
+const savedSecret = localStorage.getItem('bb_secret');
+if (savedKey && savedSecret) {
+  apiKey = savedKey;
+  apiSecret = savedSecret;
+  document.getElementById('saveKeys').checked = true;
+  // 少し待ってから自動接続（価格取得が先に始まるよう）
+  setTimeout(async () => {
+    const btn = document.getElementById('connectBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>自動接続中...';
+    setStatus('connecting');
+    try {
+      const data = await bitbankRequest('/v1/user/assets');
+      spotAssets = (data.assets||[]).filter(a => parseFloat(a.onhand_amount) > 0);
+      connected = true;
+      document.getElementById('connectPanel').style.display = 'none';
+      document.getElementById('summaryArea').style.display = 'grid';
+      setStatus('connected');
+      renderSpotTable();
+      updateSummary();
+    } catch(e) {
+      btn.disabled = false;
+      btn.innerHTML = '接続して残高を取得';
+      setStatus('error', '自動接続失敗: ' + e.message);
+    }
+  }, 800);
+}
+
+setInterval(fetchPrices, 30000);
+setInterval(() => {
+  if (connected) {
+    bitbankRequest('/v1/user/assets').then(data => {
+      spotAssets = (data.assets||[]).filter(a=>parseFloat(a.onhand_amount)>0);
+      renderSpotTable();
+    }).catch(()=>{});
+  }
+}, 60000); // 残高は1分毎
+</script>
+</body>
+</html>
