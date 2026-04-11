@@ -563,9 +563,12 @@ async function refreshPrices() {
   btn.textContent = '取得中...'; btn.disabled = true;
   const results = {}, openResults = {};
 
-  // ドル円レート取得
+  // ドル円レート取得（タイムアウト付き）
   try {
-    const fx = await fetch('https://api.frankfurter.dev/v2/rates?base=USD&quotes=JPY');
+    const fx = await Promise.race([
+      fetch('https://api.frankfurter.dev/v2/rates?base=USD&quotes=JPY'),
+      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000))
+    ]);
     if (fx.ok) {
       const fxd = await fx.json();
       usdJpy = fxd.rates?.JPY || 0;
@@ -574,33 +577,23 @@ async function refreshPrices() {
     }
   } catch {}
 
-  // CoinGecko 24h変化率取得
-  try {
-    const cgIds = COINS.filter(c => c.cg).map(c => c.cg).join(',');
-    const cgRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=jpy&include_24hr_change=true`);
-    if (cgRes.ok) {
-      const cgData = await cgRes.json();
-      COINS.forEach(c => {
-        if (c.cg && cgData[c.cg]) {
-          changes[c.id] = cgData[c.cg].jpy_24h_change;
-        }
-      });
-    }
-  } catch {}
-
+  // ビットバンク・コインチェック価格取得
   await Promise.all(COINS.map(async c => {
     try {
       if (c.src === 'cc') {
-        // コインチェックAPIから取得
-        const res = await fetch(`https://coincheck.com/api/ticker?pair=${c.id}`);
+        const res = await Promise.race([
+          fetch(`https://coincheck.com/api/ticker?pair=${c.id}`),
+          new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 8000))
+        ]);
         if (res.ok) {
           const d = await res.json();
           results[c.id] = parseFloat(d.last);
-          // coincheckはopenがないので前日比なし
         }
       } else {
-        // ビットバンクAPIから取得
-        const res = await fetch(`https://public.bitbank.cc/${c.id}/ticker`);
+        const res = await Promise.race([
+          fetch(`https://public.bitbank.cc/${c.id}/ticker`),
+          new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 8000))
+        ]);
         if (res.ok) {
           const d = await res.json();
           if (d.data?.last) {
@@ -620,8 +613,31 @@ async function refreshPrices() {
   renderMargins();
   updateSummary();
   document.getElementById('updateInfo').textContent =
-    new Date().toLocaleTimeString('ja-JP') + ' 更新 (30秒毎に自動更新)';
+    new Date().toLocaleTimeString('ja-JP') + ' 更新 (30秒毎)';
   btn.textContent = '🔄'; btn.disabled = false;
+
+  // CoinGecko 前日比はバックグラウンドで取得（UIをブロックしない）
+  fetchCoinGeckoChanges();
+}
+
+async function fetchCoinGeckoChanges() {
+  try {
+    const cgIds = COINS.filter(c => c.cg).map(c => c.cg).join(',');
+    const res = await Promise.race([
+      fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=jpy&include_24hr_change=true`),
+      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 10000))
+    ]);
+    if (res.ok) {
+      const data = await res.json();
+      COINS.forEach(c => {
+        if (c.cg && data[c.cg]?.jpy_24h_change !== undefined) {
+          changes[c.id] = data[c.cg].jpy_24h_change;
+        }
+      });
+      // 取得できたら表示だけ更新
+      renderSpots();
+    }
+  } catch {}
 }
 
 function updateTicker() {
