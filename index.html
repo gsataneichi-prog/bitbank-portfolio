@@ -297,7 +297,7 @@
 </div>
 
 <!-- サマリー -->
-<div class="summary" style="position:sticky;top:72px;z-index:90;background:var(--bg);padding-top:10px;padding-bottom:6px;">
+<div class="summary" style="position:sticky;top:0;z-index:90;background:var(--bg);padding:10px 0 6px;margin-top:0;">
   <div class="scard main">
     <div class="slabel">総資産評価額</div>
     <div class="svalue" id="totalAll">¥—</div>
@@ -563,43 +563,30 @@ async function refreshPrices() {
   btn.textContent = '取得中...'; btn.disabled = true;
   const results = {}, openResults = {};
 
-  // ドル円レート取得（タイムアウト付き）
-  try {
-    const fx = await Promise.race([
-      fetch('https://api.frankfurter.dev/v2/rates?base=USD&quotes=JPY'),
-      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000))
-    ]);
-    if (fx.ok) {
-      const fxd = await fx.json();
-      usdJpy = fxd.rates?.JPY || 0;
-      const fxEl = document.getElementById('fxRate');
-      if (fxEl && usdJpy) fxEl.textContent = `USD/JPY ¥${usdJpy.toFixed(2)}`;
-    }
-  } catch {}
+  // ① ドル円（バックグラウンド）
+  fetch('https://api.frankfurter.dev/v2/rates?base=USD&quotes=JPY')
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if (d?.rates?.JPY) {
+        usdJpy = d.rates.JPY;
+        const el = document.getElementById('fxRate');
+        if (el) el.textContent = `USD/JPY ¥${usdJpy.toFixed(2)}`;
+      }
+    }).catch(() => {});
 
-  // ビットバンク・コインチェック価格取得
-  await Promise.all(COINS.map(async c => {
+  // ② ビットバンク価格取得（bitbankのみ）
+  const bbCoins = COINS.filter(c => !c.src);
+  await Promise.all(bbCoins.map(async c => {
     try {
-      if (c.src === 'cc') {
-        const res = await Promise.race([
-          fetch(`https://coincheck.com/api/ticker?pair=${c.id}`),
-          new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 8000))
-        ]);
-        if (res.ok) {
-          const d = await res.json();
-          results[c.id] = parseFloat(d.last);
-        }
-      } else {
-        const res = await Promise.race([
-          fetch(`https://public.bitbank.cc/${c.id}/ticker`),
-          new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 8000))
-        ]);
-        if (res.ok) {
-          const d = await res.json();
-          if (d.data?.last) {
-            results[c.id] = parseFloat(d.data.last);
-            openResults[c.id] = parseFloat(d.data.open);
-          }
+      const res = await Promise.race([
+        fetch(`https://public.bitbank.cc/${c.id}/ticker`),
+        new Promise((_, r) => setTimeout(() => r(), 6000))
+      ]);
+      if (res?.ok) {
+        const d = await res.json();
+        if (d.data?.last) {
+          results[c.id] = parseFloat(d.data.last);
+          openResults[c.id] = parseFloat(d.data.open);
         }
       }
     } catch {}
@@ -607,7 +594,6 @@ async function refreshPrices() {
 
   prices = results;
   opens = openResults;
-  updateTicker();
   updatePriceTable();
   renderSpots();
   renderMargins();
@@ -616,52 +602,38 @@ async function refreshPrices() {
     new Date().toLocaleTimeString('ja-JP') + ' 更新 (30秒毎)';
   btn.textContent = '🔄'; btn.disabled = false;
 
-  // CoinGecko 前日比はバックグラウンドで取得（UIをブロックしない）
-  fetchCoinGeckoChanges();
+  // ③ CoinGecko（価格＋前日比）バックグラウンド
+  fetchCoinGeckoAll();
 }
 
-async function fetchCoinGeckoChanges() {
+async function fetchCoinGeckoAll() {
   try {
     const cgIds = COINS.filter(c => c.cg).map(c => c.cg).join(',');
     const res = await Promise.race([
       fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=jpy&include_24hr_change=true`),
-      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 10000))
+      new Promise((_, r) => setTimeout(() => r(), 12000))
     ]);
-    if (res.ok) {
-      const data = await res.json();
-      COINS.forEach(c => {
-        if (c.cg && data[c.cg]?.jpy_24h_change !== undefined) {
-          changes[c.id] = data[c.cg].jpy_24h_change;
-        }
-      });
-      // 取得できたら表示だけ更新
-      renderSpots();
-    }
+    if (!res?.ok) return;
+    const data = await res.json();
+    COINS.forEach(c => {
+      if (!c.cg || !data[c.cg]) return;
+      // 前日比は全コイン更新
+      if (data[c.cg].jpy_24h_change !== undefined) {
+        changes[c.id] = data[c.cg].jpy_24h_change;
+      }
+      // bitbank未対応コインの価格はCoinGeckoから
+      if (c.src && data[c.cg].jpy) {
+        prices[c.id] = data[c.cg].jpy;
+      }
+    });
+    updatePriceTable();
+    renderSpots();
+    updateSummary();
   } catch {}
 }
 
 function updateTicker() {
-  // 保有コインのpairを重複なしで取得
-  const heldPairs = [...new Set(spots.map(s => s.pair))];
-  const show = heldPairs.length > 0 ? heldPairs : ['btc_jpy','eth_jpy','xrp_jpy'];
-
-  document.getElementById('ticker').innerHTML = show.map(pair => {
-    const c = COINS.find(x => x.id === pair);
-    if (!c) return '';
-    const price = prices[pair];
-    const open = opens[pair];
-    const chg = price && open && open > 0 ? (price - open) / open * 100 : null;
-    const chgStr = chg !== null
-      ? `<span style="color:${chg >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:11px; margin-left:3px;">${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%</span>`
-      : '';
-    return `
-      <div class="ticker-item">
-        <div class="tdot"></div>
-        <span style="color:var(--text3);font-size:11px;">${c.label}</span>
-        <span style="font-weight:600;">¥${fmtPrice(price)}</span>
-        ${chgStr}
-      </div>`;
-  }).join('');
+  // tickerは削除済みのため何もしない
 }
 
 function updatePriceTable() {
