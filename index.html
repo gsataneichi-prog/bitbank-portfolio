@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>暗号資産 ポートフォリオ管理</title>
+<title>CRYPTO VAULT</title>
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Portfolio">
+<meta name="apple-mobile-web-app-title" content="CRYPTO VAULT">
 <meta name="theme-color" content="#07090f">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -255,8 +255,11 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <div class="logo">CRYPTO PORTFOLIO</div>
-      <div class="title">📊 資産管理ダッシュボード</div>
+      <div class="logo">PORTFOLIO COMMAND CENTER</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div class="title">⚡ CRYPTO VAULT</div>
+        <div id="fxRate" style="font-family:monospace;font-size:12px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 10px;">USD/JPY —</div>
+      </div>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
       <button class="toggle-btn" id="syncToggleBtn" onclick="togglePanel('sync')">☁️ 同期</button>
@@ -265,7 +268,6 @@
     </div>
   </div>
   <div class="update-info" id="updateInfo">価格取得中...</div>
-  <div class="ticker" id="ticker"></div>
 </div>
 
 <!-- Supabase設定パネル -->
@@ -295,7 +297,7 @@
 </div>
 
 <!-- サマリー -->
-<div class="summary">
+<div class="summary" style="position:sticky;top:72px;z-index:90;background:var(--bg);padding-top:10px;padding-bottom:6px;">
   <div class="scard main">
     <div class="slabel">総資産評価額</div>
     <div class="svalue" id="totalAll">¥—</div>
@@ -465,7 +467,7 @@
 
 <!-- 価格一覧タブ -->
 <div id="tab-prices" class="section" style="display:none;">
-  <div class="sec-title">LIVE PRICES — BITBANK</div>
+  <div class="sec-title">LIVE PRICES — BITBANK / COINCHECK</div>
   <div style="overflow-x:auto;">
     <table class="price-table">
       <thead><tr><th>コイン</th><th>名称</th><th>現在価格</th></tr></thead>
@@ -479,39 +481,39 @@
 // コイン定義
 // ────────────────────────────────
 const COINS = [
-  { id:'btc_jpy', label:'BTC', name:'ビットコイン' },
-  { id:'eth_jpy', label:'ETH', name:'イーサリアム' },
-  { id:'xrp_jpy', label:'XRP', name:'リップル' },
-  { id:'sol_jpy', label:'SOL', name:'ソラナ' },
-  { id:'doge_jpy', label:'DOGE', name:'ドージコイン' },
-  { id:'ada_jpy', label:'ADA', name:'カルダノ' },
-  { id:'dot_jpy', label:'DOT', name:'ポルカドット' },
-  { id:'ltc_jpy', label:'LTC', name:'ライトコイン' },
-  { id:'bcc_jpy', label:'BCH', name:'ビットコインキャッシュ' },
-  { id:'xlm_jpy', label:'XLM', name:'ステラルーメン' },
-  { id:'link_jpy', label:'LINK', name:'チェーンリンク' },
-  { id:'matic_jpy', label:'MATIC', name:'ポリゴン' },
-  { id:'avax_jpy', label:'AVAX', name:'アバランチ' },
-  { id:'mona_jpy', label:'MONA', name:'モナコイン' },
-  { id:'bat_jpy', label:'BAT', name:'ベーシックアテンション' },
-  { id:'xym_jpy', label:'XYM', name:'シンボル' },
-  { id:'flr_jpy', label:'FLR', name:'フレア' },
-  { id:'sand_jpy', label:'SAND', name:'ザ・サンドボックス' },
-  { id:'enj_jpy', label:'ENJ', name:'エンジン' },
-  { id:'apt_jpy', label:'APT', name:'アプトス' },
-  { id:'sui_jpy', label:'SUI', name:'スイ' },
-  { id:'shib_jpy', label:'SHIB', name:'柴犬コイン' },
-  { id:'pepe_jpy', label:'PEPE', name:'ペペ' },
-  { id:'uni_jpy', label:'UNI', name:'ユニスワップ' },
-  { id:'atom_jpy', label:'ATOM', name:'コスモス' },
-  { id:'near_jpy', label:'NEAR', name:'ニア' },
-  { id:'fil_jpy', label:'FIL', name:'ファイルコイン' },
-  { id:'arb_jpy', label:'ARB', name:'アービトラム' },
-  { id:'op_jpy', label:'OP', name:'オプティミズム' },
-  { id:'rndr_jpy', label:'RNDR', name:'レンダー' },
-  { id:'trx_jpy', label:'TRX', name:'トロン' },
-  { id:'bnb_jpy', label:'BNB', name:'バイナンスコイン' },
-  { id:'sky_jpy', label:'SKY', name:'スカイ' },
+  { id:'btc_jpy', label:'BTC', name:'ビットコイン', cg:'bitcoin' },
+  { id:'eth_jpy', label:'ETH', name:'イーサリアム', cg:'ethereum' },
+  { id:'xrp_jpy', label:'XRP', name:'リップル', cg:'ripple' },
+  { id:'sol_jpy', label:'SOL', name:'ソラナ', src:'cc', cg:'solana' },
+  { id:'doge_jpy', label:'DOGE', name:'ドージコイン', src:'cc', cg:'dogecoin' },
+  { id:'ada_jpy', label:'ADA', name:'カルダノ', cg:'cardano' },
+  { id:'dot_jpy', label:'DOT', name:'ポルカドット', cg:'polkadot' },
+  { id:'ltc_jpy', label:'LTC', name:'ライトコイン', cg:'litecoin' },
+  { id:'bcc_jpy', label:'BCH', name:'ビットコインキャッシュ', cg:'bitcoin-cash' },
+  { id:'xlm_jpy', label:'XLM', name:'ステラルーメン', cg:'stellar' },
+  { id:'link_jpy', label:'LINK', name:'チェーンリンク', cg:'chainlink' },
+  { id:'matic_jpy', label:'MATIC', name:'ポリゴン', cg:'matic-network' },
+  { id:'avax_jpy', label:'AVAX', name:'アバランチ', src:'cc', cg:'avalanche-2' },
+  { id:'mona_jpy', label:'MONA', name:'モナコイン', cg:'monacoin' },
+  { id:'bat_jpy', label:'BAT', name:'ベーシックアテンション', cg:'basic-attention-token' },
+  { id:'xym_jpy', label:'XYM', name:'シンボル', cg:'symbol' },
+  { id:'flr_jpy', label:'FLR', name:'フレア', cg:'flare-networks' },
+  { id:'sand_jpy', label:'SAND', name:'ザ・サンドボックス', cg:'the-sandbox' },
+  { id:'enj_jpy', label:'ENJ', name:'エンジン', cg:'enjincoin' },
+  { id:'apt_jpy', label:'APT', name:'アプトス', cg:'aptos' },
+  { id:'sui_jpy', label:'SUI', name:'スイ', cg:'sui' },
+  { id:'shib_jpy', label:'SHIB', name:'柴犬コイン', src:'cc', cg:'shiba-inu' },
+  { id:'pepe_jpy', label:'PEPE', name:'ペペ', src:'cc', cg:'pepe' },
+  { id:'uni_jpy', label:'UNI', name:'ユニスワップ', cg:'uniswap' },
+  { id:'atom_jpy', label:'ATOM', name:'コスモス', cg:'cosmos' },
+  { id:'near_jpy', label:'NEAR', name:'ニア', cg:'near' },
+  { id:'fil_jpy', label:'FIL', name:'ファイルコイン', cg:'filecoin' },
+  { id:'arb_jpy', label:'ARB', name:'アービトラム', cg:'arbitrum' },
+  { id:'op_jpy', label:'OP', name:'オプティミズム', cg:'optimism' },
+  { id:'rndr_jpy', label:'RNDR', name:'レンダー', cg:'render-token' },
+  { id:'trx_jpy', label:'TRX', name:'トロン', src:'cc', cg:'tron' },
+  { id:'bnb_jpy', label:'BNB', name:'バイナンスコイン', cg:'binancecoin' },
+  { id:'sky_jpy', label:'SKY', name:'スカイ', cg:'sky' },
 ];
 
 const EXCHANGES = {
@@ -529,6 +531,8 @@ const EX_COLORS = { bitbank: '#3b82f6', coincheck: '#f59e0b', binancejp: '#22c55
 // ────────────────────────────────
 let prices = {};
 let opens = {}; // 24h始値（前日比計算用）
+let changes = {}; // CoinGecko 24h変化率
+let usdJpy = 0; // ドル円レート
 let spots = []; // { id, exchange, pair, label, name, amount, avgPrice }
 let margins = []; // { id, pair, side, size, entry, leverage }
 let midCounter = 1;
@@ -558,16 +562,56 @@ async function refreshPrices() {
   const btn = document.getElementById('refreshBtn');
   btn.textContent = '取得中...'; btn.disabled = true;
   const results = {}, openResults = {};
+
+  // ドル円レート取得
+  try {
+    const fx = await fetch('https://api.frankfurter.dev/v2/rates?base=USD&quotes=JPY');
+    if (fx.ok) {
+      const fxd = await fx.json();
+      usdJpy = fxd.rates?.JPY || 0;
+      const fxEl = document.getElementById('fxRate');
+      if (fxEl && usdJpy) fxEl.textContent = `USD/JPY ¥${usdJpy.toFixed(2)}`;
+    }
+  } catch {}
+
+  // CoinGecko 24h変化率取得
+  try {
+    const cgIds = COINS.filter(c => c.cg).map(c => c.cg).join(',');
+    const cgRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=jpy&include_24hr_change=true`);
+    if (cgRes.ok) {
+      const cgData = await cgRes.json();
+      COINS.forEach(c => {
+        if (c.cg && cgData[c.cg]) {
+          changes[c.id] = cgData[c.cg].jpy_24h_change;
+        }
+      });
+    }
+  } catch {}
+
   await Promise.all(COINS.map(async c => {
     try {
-      const res = await fetch(`https://public.bitbank.cc/${c.id}/ticker`);
-      if (res.ok) {
-        const d = await res.json();
-        results[c.id] = parseFloat(d.data?.last);
-        openResults[c.id] = parseFloat(d.data?.open); // 当日始値
+      if (c.src === 'cc') {
+        // コインチェックAPIから取得
+        const res = await fetch(`https://coincheck.com/api/ticker?pair=${c.id}`);
+        if (res.ok) {
+          const d = await res.json();
+          results[c.id] = parseFloat(d.last);
+          // coincheckはopenがないので前日比なし
+        }
+      } else {
+        // ビットバンクAPIから取得
+        const res = await fetch(`https://public.bitbank.cc/${c.id}/ticker`);
+        if (res.ok) {
+          const d = await res.json();
+          if (d.data?.last) {
+            results[c.id] = parseFloat(d.data.last);
+            openResults[c.id] = parseFloat(d.data.open);
+          }
+        }
       }
     } catch {}
   }));
+
   prices = results;
   opens = openResults;
   updateTicker();
@@ -674,11 +718,23 @@ function renderSpots() {
 
     const rows = items.map(s => {
       const price = prices[s.pair] || null;
+      const open = opens[s.pair] || null;
       const val = price ? price * s.amount : null;
       const cost = s.avgPrice ? s.avgPrice * s.amount : null;
       const pnl = val && cost ? val - cost : null;
       const pct = pnl !== null && cost ? pnl / cost * 100 : null;
       const color = EX_COLORS[s.exchange] || '#3b82f6';
+      // 前日比：CoinGecko優先、なければbitbankのopen計算
+      const cgChg = changes[s.pair];
+      const bbChg = price && open ? (price - open) / open * 100 : null;
+      const dayChg = cgChg !== undefined ? cgChg : bbChg;
+      const dayChgStr = dayChg !== null && dayChg !== undefined
+        ? `<span style="font-size:11px;font-weight:700;color:${dayChg>=0?'var(--green)':'var(--red)'};">${dayChg>=0?'+':''}${dayChg.toFixed(2)}%</span>`
+        : '';
+      const usdPrice = price && usdJpy ? price / usdJpy : null;
+      const usdStr = usdPrice
+        ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${usdPrice < 0.01 ? usdPrice.toFixed(6) : usdPrice < 1 ? usdPrice.toFixed(4) : usdPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`
+        : '';
 
       return `
         <div class="coin-row">
@@ -688,7 +744,8 @@ function renderSpots() {
           <div class="coin-info">
             <div class="coin-label">${s.label}</div>
             <div class="coin-name-small">${s.name}</div>
-            <div class="coin-price">¥${fmtPrice(price)}</div>
+            <div class="coin-price">¥${fmtPrice(price)} ${dayChgStr}</div>
+            ${usdStr}
           </div>
           <div class="amount-group">
             <div class="amount-label">保有数量</div>
