@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Portfolio">
 <meta name="theme-color" content="#07090f">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
@@ -206,6 +207,30 @@
   .red { color: var(--red); }
   .mono { font-family: monospace; }
 
+  .sync-panel {
+    margin: 14px 14px 0;
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 12px; padding: 14px;
+  }
+  .sync-panel h3 { font-size: 13px; color: var(--accent); margin-bottom: 10px; }
+  .sync-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .sync-input {
+    flex: 1; min-width: 180px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 6px; color: var(--text); padding: 8px 10px;
+    font-family: monospace; font-size: 12px; outline: none;
+  }
+  .sync-input:focus { border-color: var(--accent); }
+  .sync-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; margin-top: 6px;
+  }
+  .sdot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .sdot-green { background: var(--green); animation: blink 1.5s infinite; }
+  .sdot-gray { background: var(--text3); }
+  .sdot-yellow { background: var(--gold); animation: blink 1s infinite; }
+  .sdot-red { background: var(--red); }
+
   @media (max-width: 480px) {
     .summary { grid-template-columns: 1fr 1fr; }
     .svalue { font-size: 16px; }
@@ -224,6 +249,28 @@
   </div>
   <div class="update-info" id="updateInfo">価格取得中...</div>
   <div class="ticker" id="ticker"></div>
+</div>
+
+<!-- Supabase設定パネル -->
+<div class="sync-panel" id="syncPanel">
+  <h3>☁️ リアルタイム同期（Supabase）</h3>
+  <div class="sync-row">
+    <input class="sync-input" type="text" id="sbUrl" placeholder="Project URL (https://xxxx.supabase.co)">
+  </div>
+  <div class="sync-row">
+    <input class="sync-input" type="password" id="sbKey" placeholder="anon public key">
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <button class="btn btn-sm" onclick="connectSupabase()">接続する</button>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2);">
+      <input type="checkbox" id="sbSave" style="accent-color:var(--accent);"> このブラウザに保存
+    </label>
+    <button class="btn-ghost" onclick="disconnectSupabase()" style="font-size:11px;">切断</button>
+  </div>
+  <div class="sync-status" id="syncStatus">
+    <div class="sdot sdot-gray"></div>
+    <span style="color:var(--text3);">未接続 — ローカル保存モードで動作中</span>
+  </div>
 </div>
 
 <!-- サマリー -->
@@ -683,11 +730,91 @@ function switchTab(tab) {
 }
 
 // ────────────────────────────────
-// データ保存・読込（localStorage）
+// Supabase
+// ────────────────────────────────
+let supabase = null;
+const SB_ROW_ID = 1;
+
+function setSyncStatus(state, msg='') {
+  const el = document.getElementById('syncStatus');
+  const dots = { connected:'sdot-green', connecting:'sdot-yellow', error:'sdot-red', disconnected:'sdot-gray' };
+  const msgs = {
+    connected: `☁️ Supabase同期中 — スマホとPCでリアルタイム共有されます`,
+    connecting: '接続中...',
+    error: `⚠️ ${msg}`,
+    disconnected: '未接続 — ローカル保存モードで動作中',
+  };
+  el.innerHTML = `<div class="sdot ${dots[state]}"></div><span style="color:${state==='connected'?'var(--green)':state==='error'?'var(--red)':'var(--text3)'};">${msgs[state]}</span>`;
+}
+
+async function connectSupabase() {
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  if (!url || !key) { alert('URLとAPIキーを両方入力してください'); return; }
+  setSyncStatus('connecting');
+  try {
+    supabase = window.supabase.createClient(url, key);
+    // 接続テスト
+    const { error } = await supabase.from('portfolio').select('id').limit(1);
+    if (error) throw new Error(error.message);
+    // 保存チェック
+    if (document.getElementById('sbSave').checked) {
+      localStorage.setItem('sb_url', url);
+      localStorage.setItem('sb_key', key);
+    }
+    document.getElementById('sbUrl').value = '';
+    document.getElementById('sbKey').value = '';
+    setSyncStatus('connected');
+    // データ読込
+    await loadFromSupabase();
+    // リアルタイム購読
+    supabase.channel('portfolio').on('postgres_changes',
+      { event: '*', schema: 'public', table: 'portfolio' },
+      async () => { await loadFromSupabase(); }
+    ).subscribe();
+  } catch(e) {
+    supabase = null;
+    setSyncStatus('error', e.message);
+  }
+}
+
+function disconnectSupabase() {
+  supabase = null;
+  localStorage.removeItem('sb_url');
+  localStorage.removeItem('sb_key');
+  setSyncStatus('disconnected');
+}
+
+async function loadFromSupabase() {
+  if (!supabase) return;
+  try {
+    const { data, error } = await supabase.from('portfolio').select('*').eq('id', SB_ROW_ID).single();
+    if (error && error.code !== 'PGRST116') throw error;
+    if (data) {
+      try { spots = JSON.parse(data.spots || '[]'); } catch { spots = []; }
+      try { margins = JSON.parse(data.margins || '[]'); } catch { margins = []; }
+      renderSpots();
+      renderMargins();
+      updateSummary();
+    }
+  } catch(e) { console.error('load error:', e); }
+}
+
+async function saveToSupabase() {
+  if (!supabase) return;
+  try {
+    const payload = { id: SB_ROW_ID, spots: JSON.stringify(spots), margins: JSON.stringify(margins) };
+    await supabase.from('portfolio').upsert(payload, { onConflict: 'id' });
+  } catch(e) { console.error('save error:', e); }
+}
+
+// ────────────────────────────────
+// データ保存・読込（localStorage + Supabase）
 // ────────────────────────────────
 function saveData() {
   localStorage.setItem('portfolio_spots', JSON.stringify(spots));
   localStorage.setItem('portfolio_margins', JSON.stringify(margins));
+  if (supabase) saveToSupabase();
 }
 
 function loadData() {
@@ -709,6 +836,16 @@ renderMargins();
 updateSummary();
 refreshPrices();
 setInterval(refreshPrices, 30000);
+
+// 保存済みSupabaseキーがあれば自動接続
+const savedSbUrl = localStorage.getItem('sb_url');
+const savedSbKey = localStorage.getItem('sb_key');
+if (savedSbUrl && savedSbKey) {
+  document.getElementById('sbUrl').value = savedSbUrl;
+  document.getElementById('sbKey').value = savedSbKey;
+  document.getElementById('sbSave').checked = true;
+  connectSupabase();
+}
 </script>
 </body>
 </html>
