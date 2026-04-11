@@ -1106,7 +1106,7 @@ function parseCSV(text, filename) {
 
   updateSummary();
 
-  // CSV結果をlocalStorageに保存
+  // CSV結果をlocalStorage＆Supabaseに保存
   try {
     localStorage.setItem('portfolio_csv', JSON.stringify({
       csvRealized, csvFee, csvInterest,
@@ -1114,6 +1114,9 @@ function parseCSV(text, filename) {
       realizedDisp: realizedText, feeDisp: feeText, interestDisp: interestText,
     }));
   } catch(e) { console.error('CSV save error:', e); }
+
+  // Supabaseにも同期（スマホに自動反映）
+  saveToSupabase();
 }
 let sbClient = null;
 const SB_ROW_ID = 1;
@@ -1179,7 +1182,8 @@ async function loadFromSupabase() {
           csvRealized = csv.csvRealized || 0;
           csvFee = csv.csvFee || 0;
           csvInterest = csv.csvInterest || 0;
-          restoreCsvDisplay(csv);
+          // DOMが準備できてから復元
+          setTimeout(() => restoreCsvDisplay(csv), 100);
         } catch {}
       }
       renderSpots();
