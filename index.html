@@ -732,7 +732,7 @@ function switchTab(tab) {
 // ────────────────────────────────
 // Supabase
 // ────────────────────────────────
-let supabase = null;
+let sbClient = null;
 const SB_ROW_ID = 1;
 
 function setSyncStatus(state, msg='') {
@@ -753,11 +753,9 @@ async function connectSupabase() {
   if (!url || !key) { alert('URLとAPIキーを両方入力してください'); return; }
   setSyncStatus('connecting');
   try {
-    supabase = window.supabase.createClient(url, key);
-    // 接続テスト
-    const { error } = await supabase.from('portfolio').select('id').limit(1);
+    sbClient = window.supabase.createClient(url, key);
+    const { error } = await sbClient.from('portfolio').select('id').limit(1);
     if (error) throw new Error(error.message);
-    // 保存チェック
     if (document.getElementById('sbSave').checked) {
       localStorage.setItem('sb_url', url);
       localStorage.setItem('sb_key', key);
@@ -765,30 +763,28 @@ async function connectSupabase() {
     document.getElementById('sbUrl').value = '';
     document.getElementById('sbKey').value = '';
     setSyncStatus('connected');
-    // データ読込
     await loadFromSupabase();
-    // リアルタイム購読
-    supabase.channel('portfolio').on('postgres_changes',
+    sbClient.channel('portfolio').on('postgres_changes',
       { event: '*', schema: 'public', table: 'portfolio' },
       async () => { await loadFromSupabase(); }
     ).subscribe();
   } catch(e) {
-    supabase = null;
+    sbClient = null;
     setSyncStatus('error', e.message);
   }
 }
 
 function disconnectSupabase() {
-  supabase = null;
+  sbClient = null;
   localStorage.removeItem('sb_url');
   localStorage.removeItem('sb_key');
   setSyncStatus('disconnected');
 }
 
 async function loadFromSupabase() {
-  if (!supabase) return;
+  if (!sbClient) return;
   try {
-    const { data, error } = await supabase.from('portfolio').select('*').eq('id', SB_ROW_ID).single();
+    const { data, error } = await sbClient.from('portfolio').select('*').eq('id', SB_ROW_ID).single();
     if (error && error.code !== 'PGRST116') throw error;
     if (data) {
       try { spots = JSON.parse(data.spots || '[]'); } catch { spots = []; }
@@ -801,10 +797,10 @@ async function loadFromSupabase() {
 }
 
 async function saveToSupabase() {
-  if (!supabase) return;
+  if (!sbClient) return;
   try {
     const payload = { id: SB_ROW_ID, spots: JSON.stringify(spots), margins: JSON.stringify(margins) };
-    await supabase.from('portfolio').upsert(payload, { onConflict: 'id' });
+    await sbClient.from('portfolio').upsert(payload, { onConflict: 'id' });
   } catch(e) { console.error('save error:', e); }
 }
 
@@ -814,7 +810,7 @@ async function saveToSupabase() {
 function saveData() {
   localStorage.setItem('portfolio_spots', JSON.stringify(spots));
   localStorage.setItem('portfolio_margins', JSON.stringify(margins));
-  if (supabase) saveToSupabase();
+  if (sbClient) saveToSupabase();
 }
 
 function loadData() {
