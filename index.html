@@ -774,17 +774,6 @@ function updateSummary() {
     }
   });
 
-  // 信用未実現損益
-  let unrealized = 0;
-  margins.forEach(m => {
-    const p = prices[m.pair];
-    const size = parseFloat(m.size)||0;
-    const entry = parseFloat(m.entry)||0;
-    if (p && size && entry) {
-      unrealized += m.side === 'long' ? (p-entry)*size : (entry-p)*size;
-    }
-  });
-
   const mTotal = unrealized + csvRealized + csvFee + csvInterest;
 
   const setEl = (id, val, colored=true) => {
