@@ -17,25 +17,26 @@
     --bg: #07090f;
     --bg2: #0c1018;
     --bg3: #111620;
-    --border: #1c2535;
-    --border2: #243044;
-    --accent: #3b82f6;
-    --accent2: #1d4ed8;
-    --green: #22c55e;
-    --red: #ef4444;
-    --gold: #f59e0b;
-    --text: #e2e8f0;
-    --text2: #94a3b8;
-    --text3: #475569;
+    --border: #243550;
+    --border2: #2d4a70;
+    --accent: #60a5fa;
+    --accent2: #2563eb;
+    --green: #4ade80;
+    --red: #f87171;
+    --gold: #fbbf24;
+    --text: #f0f4f8;
+    --text2: #b0c4d8;
+    --text3: #6b8aaa;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'ヒラギノ丸ゴ ProN', 'Hiragino Maru Gothic ProN', 'Hiragino Maru Gothic Pro', 'rounded-mplus-1p', sans-serif;
     min-height: 100vh;
     padding-bottom: 80px;
+    font-size: 15px;
   }
 
   /* Header */
@@ -46,19 +47,19 @@
     position: sticky; top: 0; z-index: 100;
   }
   .header-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .logo { font-size: 10px; letter-spacing: .3em; color: var(--text3); font-family: monospace; }
-  .title { font-size: 18px; font-weight: 900; }
-  .update-info { font-size: 10px; color: var(--text3); font-family: monospace; margin-top: 4px; }
+  .logo { font-size: 11px; letter-spacing: .3em; color: var(--text3); font-family: monospace; }
+  .title { font-size: 20px; font-weight: 900; }
+  .update-info { font-size: 11px; color: var(--text3); font-family: monospace; margin-top: 4px; }
 
   /* Ticker */
   .ticker { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
   .ticker-item {
     display: flex; align-items: center; gap: 5px;
     background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 20px; padding: 3px 10px;
-    font-size: 11px; font-family: monospace;
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 13px; font-family: monospace;
   }
-  .tdot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: blink 1.5s infinite; }
+  .tdot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.5s infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
   /* Summary */
@@ -68,18 +69,18 @@
     border-radius: 12px; padding: 12px 14px;
   }
   .scard.main { border-color: var(--accent2); background: linear-gradient(135deg, #0c1830, var(--bg2)); }
-  .slabel { font-size: 10px; letter-spacing: .2em; color: var(--text3); margin-bottom: 3px; }
-  .svalue { font-size: 20px; font-weight: 800; font-family: monospace; }
-  .ssub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .slabel { font-size: 11px; letter-spacing: .2em; color: var(--text3); margin-bottom: 3px; }
+  .svalue { font-size: 22px; font-weight: 800; font-family: monospace; }
+  .ssub { font-size: 12px; color: var(--text3); margin-top: 2px; }
 
   /* Tabs */
   .tabs { display: flex; margin: 14px 14px 12px; background: var(--bg2); border-radius: 10px; padding: 3px; border: 1px solid var(--border); }
-  .tab { flex: 1; padding: 8px 0; border: none; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 500; background: transparent; color: var(--text3); font-family: 'Noto Sans JP', sans-serif; transition: all .2s; }
+  .tab { flex: 1; padding: 9px 0; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; background: transparent; color: var(--text3); font-family: 'ヒラギノ丸ゴ ProN', 'Hiragino Maru Gothic ProN', sans-serif; transition: all .2s; }
   .tab.active { background: var(--accent2); color: white; font-weight: 700; }
 
   /* Section */
   .section { margin: 0 14px; }
-  .sec-title { font-size: 10px; letter-spacing: .25em; color: var(--text3); margin-bottom: 10px; font-family: monospace; }
+  .sec-title { font-size: 11px; letter-spacing: .25em; color: var(--text3); margin-bottom: 10px; font-family: monospace; }
 
   /* Exchange Group */
   .ex-group { margin-bottom: 16px; }
@@ -92,8 +93,8 @@
   .ex-header.cc { border-left-color: var(--gold); }
   .ex-header.bj { border-left-color: var(--green); }
   .ex-header.bp { border-left-color: #a855f7; }
-  .ex-name { font-size: 13px; font-weight: 700; }
-  .ex-total { margin-left: auto; font-family: monospace; font-size: 13px; font-weight: 700; }
+  .ex-name { font-size: 14px; font-weight: 700; }
+  .ex-total { margin-left: auto; font-family: monospace; font-size: 14px; font-weight: 700; }
 
   /* Coin Row */
   .coin-row {
@@ -108,22 +109,22 @@
     background: linear-gradient(135deg, var(--accent2), var(--accent));
   }
   .coin-info { flex: 1; min-width: 80px; }
-  .coin-label { font-size: 14px; font-weight: 700; }
-  .coin-name-small { font-size: 10px; color: var(--text3); }
-  .coin-price { font-family: monospace; font-size: 12px; color: var(--text2); }
+  .coin-label { font-size: 15px; font-weight: 700; }
+  .coin-name-small { font-size: 11px; color: var(--text3); }
+  .coin-price { font-family: monospace; font-size: 13px; color: var(--text2); }
 
   .amount-group { display: flex; flex-direction: column; gap: 2px; min-width: 100px; }
-  .amount-label { font-size: 10px; color: var(--text3); letter-spacing: .1em; }
+  .amount-label { font-size: 11px; color: var(--text3); letter-spacing: .1em; }
   .amount-input {
     background: var(--bg3); border: 1px solid var(--border2);
-    border-radius: 6px; color: var(--text); padding: 6px 8px;
-    font-family: monospace; font-size: 13px; width: 100%; outline: none;
+    border-radius: 6px; color: var(--text); padding: 7px 9px;
+    font-family: monospace; font-size: 14px; width: 100%; outline: none;
   }
   .amount-input:focus { border-color: var(--accent); }
 
   .coin-result { min-width: 100px; text-align: right; }
-  .result-val { font-family: monospace; font-size: 14px; font-weight: 700; }
-  .result-pnl { font-size: 11px; margin-top: 2px; }
+  .result-val { font-family: monospace; font-size: 15px; font-weight: 700; }
+  .result-pnl { font-size: 12px; margin-top: 2px; }
 
   .del-btn {
     background: transparent; border: 1px solid #2a1a1a;
@@ -136,7 +137,7 @@
     width: 100%; background: transparent; border: 1px dashed var(--border2);
     border-radius: 8px; color: var(--text3); padding: 8px;
     cursor: pointer; font-size: 12px; margin-bottom: 6px;
-    font-family: 'Noto Sans JP', sans-serif; transition: all .2s;
+    font-family: 'ヒラギノ丸ゴ ProN', 'Hiragino Maru Gothic ProN', sans-serif; transition: all .2s;
   }
   .add-coin-btn:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -193,14 +194,14 @@
     width: 100%; background: transparent; border: 1px dashed var(--border2);
     border-radius: 8px; color: var(--text3); padding: 10px;
     cursor: pointer; font-size: 13px; margin-bottom: 10px;
-    font-family: 'Noto Sans JP', sans-serif; transition: all .2s;
+    font-family: 'ヒラギノ丸ゴ ProN', 'Hiragino Maru Gothic ProN', sans-serif; transition: all .2s;
   }
   .add-btn:hover { border-color: var(--accent); color: var(--accent); }
 
   /* Price table */
   .price-table { width: 100%; border-collapse: collapse; }
-  .price-table th { text-align: left; padding: 8px 10px; font-size: 10px; letter-spacing: .15em; color: var(--text3); border-bottom: 1px solid var(--border); font-family: monospace; font-weight: 400; }
-  .price-table td { padding: 10px 10px; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .price-table th { text-align: left; padding: 9px 10px; font-size: 11px; letter-spacing: .15em; color: var(--text3); border-bottom: 1px solid var(--border); font-family: monospace; font-weight: 400; }
+  .price-table td { padding: 11px 10px; font-size: 14px; border-bottom: 1px solid var(--border); }
   .price-table tr:hover td { background: var(--bg3); }
 
   .green { color: var(--green); }
@@ -231,6 +232,17 @@
   .sdot-yellow { background: var(--gold); animation: blink 1s infinite; }
   .sdot-red { background: var(--red); }
 
+  .collapsible { overflow: hidden; transition: max-height .3s ease, opacity .3s ease; }
+  .collapsible.collapsed { max-height: 0 !important; opacity: 0; pointer-events: none; }
+  .toggle-btn {
+    background: transparent; border: 1px solid var(--border2);
+    border-radius: 6px; color: var(--text3); padding: 4px 10px;
+    cursor: pointer; font-size: 11px; font-family: 'ヒラギノ丸ゴ ProN', 'Hiragino Maru Gothic ProN', sans-serif;
+    transition: all .2s;
+  }
+  .toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .toggle-btn.active { border-color: var(--accent); color: var(--accent); background: #0c1830; }
+
   @media (max-width: 480px) {
     .summary { grid-template-columns: 1fr 1fr; }
     .svalue { font-size: 16px; }
@@ -245,14 +257,20 @@
       <div class="logo">CRYPTO PORTFOLIO</div>
       <div class="title">📊 資産管理ダッシュボード</div>
     </div>
-    <button class="btn btn-sm" onclick="refreshPrices()" id="refreshBtn">🔄 価格更新</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+      <button class="toggle-btn" id="syncToggleBtn" onclick="togglePanel('sync')">☁️ 同期</button>
+      <button class="toggle-btn" id="addToggleBtn" onclick="togglePanel('add')">＋ コイン追加</button>
+      <button class="btn btn-sm" onclick="refreshPrices()" id="refreshBtn">🔄</button>
+    </div>
   </div>
   <div class="update-info" id="updateInfo">価格取得中...</div>
   <div class="ticker" id="ticker"></div>
 </div>
 
 <!-- Supabase設定パネル -->
-<div class="sync-panel" id="syncPanel">
+<div class="collapsible collapsed" id="syncPanel" style="max-height:300px;">
+  <div style="margin: 10px 14px 0;">
+  <div class="sync-panel">
   <h3>☁️ リアルタイム同期（Supabase）</h3>
   <div class="sync-row">
     <input class="sync-input" type="text" id="sbUrl" placeholder="Project URL (https://xxxx.supabase.co)">
@@ -270,6 +288,8 @@
   <div class="sync-status" id="syncStatus">
     <div class="sdot sdot-gray"></div>
     <span style="color:var(--text3);">未接続 — ローカル保存モードで動作中</span>
+  </div>
+  </div>
   </div>
 </div>
 
@@ -303,29 +323,31 @@
 <div id="tab-spot" class="section">
   <div class="sec-title">SPOT HOLDINGS — 取引所別</div>
 
-  <!-- コイン追加フォーム -->
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;">
-    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:700;">＋ コインを追加</div>
-    <div class="add-row">
-      <select class="ex-select" id="addExchange">
-        <option value="bitbank">ビットバンク</option>
-        <option value="coincheck">コインチェック</option>
-        <option value="binancejp">バイナンスJP</option>
-        <option value="bitpoint">BITPOINT</option>
-      </select>
-      <select class="coin-select" id="addCoin"></select>
-    </div>
-    <div class="add-row">
-      <div style="flex:1;">
-        <div class="amount-label">保有数量</div>
-        <input class="amount-input" type="number" id="addAmount" placeholder="例: 0.5" step="any">
+  <!-- コイン追加フォーム（折りたたみ） -->
+  <div class="collapsible collapsed" id="addPanel" style="max-height:300px;">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:700;">＋ コインを追加</div>
+      <div class="add-row">
+        <select class="ex-select" id="addExchange">
+          <option value="bitbank">ビットバンク</option>
+          <option value="coincheck">コインチェック</option>
+          <option value="binancejp">バイナンスJP</option>
+          <option value="bitpoint">BITPOINT</option>
+        </select>
+        <select class="coin-select" id="addCoin"></select>
       </div>
-      <div style="flex:1;">
-        <div class="amount-label">平均購入単価（円）</div>
-        <input class="amount-input" type="number" id="addAvgPrice" placeholder="例: 8000000" step="any">
+      <div class="add-row">
+        <div style="flex:1;">
+          <div class="amount-label">保有数量</div>
+          <input class="amount-input" type="number" id="addAmount" placeholder="例: 0.5" step="any">
+        </div>
+        <div style="flex:1;">
+          <div class="amount-label">平均購入単価（円）</div>
+          <input class="amount-input" type="number" id="addAvgPrice" placeholder="例: 8000000" step="any">
+        </div>
       </div>
+      <button class="btn" onclick="addCoin()" style="width:100%;">追加する</button>
     </div>
-    <button class="btn" onclick="addCoin()" style="width:100%;">追加する</button>
   </div>
 
   <div id="spotList"></div>
@@ -334,11 +356,78 @@
 <!-- 信用タブ -->
 <div id="tab-margin" class="section" style="display:none;">
   <div class="sec-title">MARGIN POSITIONS — 信用取引</div>
+
+  <!-- CSV読込 -->
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;">
+    <div style="font-size:12px;color:var(--text2);font-weight:700;margin-bottom:6px;">📄 ビットバンク取引履歴CSV 読込</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">信用取引を自動抽出します。現物が混じっていてもOKです。</div>
+
+    <!-- ドラッグ＆ドロップエリア -->
+    <div id="csvDropArea" style="
+      border: 2px dashed var(--border2); border-radius: 10px;
+      padding: 20px; text-align: center; cursor: pointer;
+      transition: all .2s; margin-bottom: 10px; color: var(--text3);
+      font-size: 13px;"
+      onclick="document.getElementById('csvFileInput').click()"
+      ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+      ondragleave="this.style.borderColor='var(--border2)'"
+      ondrop="handleCsvDrop(event)">
+      📂 CSVファイルをここにドラッグ＆ドロップ<br>
+      <span style="font-size:11px;">またはタップしてファイルを選択</span>
+    </div>
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleCsvFile(this.files[0])">
+
+    <!-- CSV読込結果 -->
+    <div id="csvResult" style="display:none;">
+      <div style="font-size:10px;letter-spacing:.2em;color:var(--text3);margin-bottom:8px;">CSV抽出結果</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--bg3);border-radius:6px;">
+          <span style="font-size:12px;color:var(--text2);">抽出件数（信用取引）</span>
+          <span class="mono" style="font-size:12px;font-weight:700;" id="csvCount">0件</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--bg3);border-radius:6px;">
+          <span style="font-size:12px;color:var(--text2);">実現損益合計</span>
+          <span class="mono" style="font-size:12px;font-weight:700;" id="csvRealizedDisplay">¥0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--bg3);border-radius:6px;">
+          <span style="font-size:12px;color:var(--text2);">手数料合計</span>
+          <span class="mono" style="font-size:12px;font-weight:700;" id="csvFeeDisplay">¥0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--bg3);border-radius:6px;">
+          <span style="font-size:12px;color:var(--text2);">利息合計</span>
+          <span class="mono" style="font-size:12px;font-weight:700;" id="csvInterestDisplay">¥0</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;" id="csvPeriodDisplay"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="marginList"></div>
   <button class="add-btn" onclick="addMargin()">＋ ポジションを追加</button>
-  <div class="scard" style="margin-top:4px;">
-    <div class="slabel">信用合計損益</div>
-    <div class="svalue" id="marginTotalCard" style="font-size:26px;">¥0</div>
+
+  <!-- 信用損益サマリー -->
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:4px;">
+    <div style="font-size:10px;letter-spacing:.2em;color:var(--text3);margin-bottom:10px;">MARGIN SUMMARY</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--text2);">未実現損益（建玉）</span>
+      <span class="mono" style="font-size:14px;font-weight:700;" id="unrealizedPnlDisplay">¥0</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--text2);">実現損益（CSV）</span>
+      <span class="mono" style="font-size:13px;font-weight:700;" id="realizedPnlDisplay">¥0</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--text2);">手数料（CSV）</span>
+      <span class="mono" style="font-size:13px;font-weight:700;" id="feeDisplay">¥0</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--text2);">利息（CSV）</span>
+      <span class="mono" style="font-size:13px;font-weight:700;" id="interestDisplay">¥0</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 0;">
+      <span style="font-size:14px;font-weight:700;">純損益合計</span>
+      <span class="mono" style="font-size:22px;font-weight:800;" id="marginTotalCard">¥0</span>
+    </div>
   </div>
 </div>
 
@@ -601,19 +690,36 @@ function updateSummary() {
   pnlEl.style.color = pnl !== null ? pnlColor(pnl) : 'var(--text)';
   document.getElementById('totalPnlPct').textContent = pct !== null ? `(${pnlSign(pct)}${pct.toFixed(2)}%)` : '';
 
-  // 信用合計
-  let mTotal = 0;
+  // 信用未実現損益
+  let unrealized = 0;
   margins.forEach(m => {
     const p = prices[m.pair];
     const size = parseFloat(m.size)||0;
     const entry = parseFloat(m.entry)||0;
     if (p && size && entry) {
-      mTotal += m.side === 'long' ? (p-entry)*size : (entry-p)*size;
+      unrealized += m.side === 'long' ? (p-entry)*size : (entry-p)*size;
     }
   });
+
+  // CSV由来の損益
+  const mTotal = unrealized + csvRealized + csvFee + csvInterest;
+
+  const setEl = (id, val, colored=true) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = pnlSign(val)+'¥'+fmt(val, val % 1 !== 0 ? 4 : 0);
+    if (colored) el.style.color = val === 0 ? 'var(--text)' : pnlColor(val);
+  };
+
+  setEl('unrealizedPnlDisplay', unrealized);
+  setEl('realizedPnlDisplay', csvRealized);
+  setEl('feeDisplay', csvFee);
+  setEl('interestDisplay', csvInterest);
+
   const mEl = document.getElementById('totalMargin');
   const mEl2 = document.getElementById('marginTotalCard');
   [mEl, mEl2].forEach(el => {
+    if (!el) return;
     el.textContent = pnlSign(mTotal)+'¥'+fmt(mTotal,0);
     el.style.color = pnlColor(mTotal);
   });
@@ -730,8 +836,113 @@ function switchTab(tab) {
 }
 
 // ────────────────────────────────
-// Supabase
+// パネル折りたたみ
 // ────────────────────────────────
+function togglePanel(type) {
+  if (type === 'sync') {
+    const el = document.getElementById('syncPanel');
+    const btn = document.getElementById('syncToggleBtn');
+    el.classList.toggle('collapsed');
+    btn.classList.toggle('active', !el.classList.contains('collapsed'));
+  } else if (type === 'add') {
+    const el = document.getElementById('addPanel');
+    const btn = document.getElementById('addToggleBtn');
+    el.classList.toggle('collapsed');
+    btn.classList.toggle('active', !el.classList.contains('collapsed'));
+  }
+}
+
+// ────────────────────────────────
+// CSV読込・パース
+// ────────────────────────────────
+let csvRealized = 0, csvFee = 0, csvInterest = 0;
+
+function handleCsvDrop(e) {
+  e.preventDefault();
+  document.getElementById('csvDropArea').style.borderColor = 'var(--border2)';
+  const file = e.dataTransfer.files[0];
+  if (file) handleCsvFile(file);
+}
+
+function handleCsvFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => parseCSV(e.target.result);
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSV(text) {
+  // BOM除去
+  text = text.replace(/^\uFEFF/, '');
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  if (lines.length < 2) { alert('CSVの形式が正しくありません'); return; }
+
+  // ヘッダー解析
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  const idx = {
+    type: headers.findIndex(h => h.includes('現物') || h.includes('信用') || h === '現物/信用'),
+    realized: headers.findIndex(h => h.includes('実現損益')),
+    fee_occur: headers.findIndex(h => h.includes('発生手数料')),
+    fee_real: headers.findIndex(h => h.includes('実現手数料')),
+    interest: headers.findIndex(h => h.includes('実現利息') || h.includes('利息')),
+    date: headers.findIndex(h => h.includes('取引日')),
+    trade_type: headers.findIndex(h => h === 'タイプ' || h.includes('タイプ')),
+  };
+
+  let realized = 0, fee = 0, interest = 0, count = 0;
+  let minDate = '', maxDate = '';
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, ''));
+    if (cols.length < 3) continue;
+
+    // 信用取引のみ抽出
+    const typeVal = idx.type >= 0 ? cols[idx.type] : '';
+    if (!typeVal.includes('信用')) continue;
+
+    // 信用決済のみ実現損益を集計（信用新規は除く）
+    const tradeType = idx.trade_type >= 0 ? cols[idx.trade_type] : '';
+    const isClose = typeVal.includes('決済') || tradeType.includes('損切') || tradeType.includes('成行') || tradeType.includes('指値');
+
+    const r = parseFloat(cols[idx.realized]) || 0;
+    const fo = parseFloat(cols[idx.fee_occur]) || 0;
+    const fr = parseFloat(cols[idx.fee_real]) || 0;
+    const intr = parseFloat(cols[idx.interest]) || 0;
+
+    if (r !== 0) { realized += r; count++; }
+    fee += fo + fr;
+    interest += intr;
+
+    // 期間
+    const d = idx.date >= 0 ? cols[idx.date] : '';
+    if (d) {
+      if (!minDate || d < minDate) minDate = d;
+      if (!maxDate || d > maxDate) maxDate = d;
+    }
+  }
+
+  csvRealized = realized;
+  csvFee = -Math.abs(fee);
+  csvInterest = -Math.abs(interest);
+
+  // 結果表示
+  const sign = v => v >= 0 ? '+' : '';
+  document.getElementById('csvResult').style.display = 'block';
+  document.getElementById('csvCount').textContent = `${count}件`;
+  document.getElementById('csvRealizedDisplay').textContent = sign(realized)+'¥'+fmt(realized,2);
+  document.getElementById('csvRealizedDisplay').style.color = realized >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('csvFeeDisplay').textContent = '-¥'+fmt(Math.abs(fee),4);
+  document.getElementById('csvFeeDisplay').style.color = 'var(--red)';
+  document.getElementById('csvInterestDisplay').textContent = interest ? '-¥'+fmt(Math.abs(interest),4) : '¥0';
+  document.getElementById('csvInterestDisplay').style.color = interest ? 'var(--red)' : 'var(--text)';
+  if (minDate && maxDate) {
+    document.getElementById('csvPeriodDisplay').textContent = `対象期間: ${maxDate} 〜 ${minDate}`;
+  }
+  document.getElementById('csvDropArea').style.borderColor = 'var(--green)';
+  document.getElementById('csvDropArea').innerHTML = `✅ ${file ? file.name : 'CSV'} 読込完了<br><span style="font-size:11px;color:var(--text3);">別のファイルを読み込む場合はタップ</span>`;
+
+  updateSummary();
+}
 let sbClient = null;
 const SB_ROW_ID = 1;
 
