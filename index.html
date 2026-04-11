@@ -986,6 +986,7 @@ function parseCSV(text) {
   document.getElementById('csvDropArea').innerHTML = `✅ ${file ? file.name : 'CSV'} 読込完了<br><span style="font-size:11px;color:var(--text3);">別のファイルを読み込む場合はタップ</span>`;
 
   updateSummary();
+  saveData(); // CSV結果を保存
 }
 let sbClient = null;
 const SB_ROW_ID = 1;
@@ -1065,6 +1066,15 @@ async function saveToSupabase() {
 function saveData() {
   localStorage.setItem('portfolio_spots', JSON.stringify(spots));
   localStorage.setItem('portfolio_margins', JSON.stringify(margins));
+  // CSV集計結果も保存
+  localStorage.setItem('portfolio_csv', JSON.stringify({
+    csvRealized, csvFee, csvInterest,
+    count: document.getElementById('csvCount')?.textContent || '0件',
+    period: document.getElementById('csvPeriodDisplay')?.textContent || '',
+    realizedDisp: document.getElementById('csvRealizedDisplay')?.textContent || '',
+    feeDisp: document.getElementById('csvFeeDisplay')?.textContent || '',
+    interestDisp: document.getElementById('csvInterestDisplay')?.textContent || '',
+  }));
   if (sbClient) saveToSupabase();
 }
 
@@ -1072,8 +1082,35 @@ function loadData() {
   try {
     const s = localStorage.getItem('portfolio_spots');
     const m = localStorage.getItem('portfolio_margins');
+    const c = localStorage.getItem('portfolio_csv');
     if (s) spots = JSON.parse(s);
     if (m) { margins = JSON.parse(m); midCounter = margins.length + 1; }
+    if (c) {
+      const csv = JSON.parse(c);
+      csvRealized = csv.csvRealized || 0;
+      csvFee = csv.csvFee || 0;
+      csvInterest = csv.csvInterest || 0;
+      // 復元表示
+      if (csvRealized !== 0 || csvFee !== 0 || csvInterest !== 0) {
+        const el = document.getElementById('csvResult');
+        if (el) {
+          el.style.display = 'block';
+          document.getElementById('csvCount').textContent = csv.count || '';
+          document.getElementById('csvPeriodDisplay').textContent = csv.period || '';
+          const rEl = document.getElementById('csvRealizedDisplay');
+          rEl.textContent = csv.realizedDisp || '';
+          rEl.style.color = csvRealized >= 0 ? 'var(--green)' : 'var(--red)';
+          const fEl = document.getElementById('csvFeeDisplay');
+          fEl.textContent = csv.feeDisp || '';
+          fEl.style.color = 'var(--red)';
+          const iEl = document.getElementById('csvInterestDisplay');
+          iEl.textContent = csv.interestDisp || '';
+          iEl.style.color = csvInterest ? 'var(--red)' : 'var(--text)';
+          document.getElementById('csvDropArea').style.borderColor = 'var(--green)';
+          document.getElementById('csvDropArea').innerHTML = `✅ 保存済みCSVデータを復元しました<br><span style="font-size:11px;color:var(--text3);">別のファイルを読み込む場合はタップ</span>`;
+        }
+      }
+    }
   } catch {}
 }
 
