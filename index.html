@@ -297,7 +297,7 @@
 </div>
 
 <!-- サマリー -->
-<div class="summary" style="position:sticky;top:0;z-index:90;background:var(--bg);padding:10px 0 6px;margin-top:0;">
+<div class="summary" id="summaryCards" style="position:sticky;top:0;z-index:90;background:var(--bg);padding:10px 0 6px;">
   <div class="scard main">
     <div class="slabel">総資産評価額</div>
     <div class="svalue" id="totalAll">¥—</div>
@@ -563,16 +563,29 @@ async function refreshPrices() {
   btn.textContent = '取得中...'; btn.disabled = true;
   const results = {}, openResults = {};
 
-  // ① ドル円（バックグラウンド）
+  // ① ドル円（バックグラウンド）- API修正
   fetch('https://api.frankfurter.dev/v2/rates?base=USD&quotes=JPY')
     .then(r => r.ok ? r.json() : null)
     .then(d => {
-      if (d?.rates?.JPY) {
-        usdJpy = d.rates.JPY;
+      // v2はrates.JPY または rates["JPY"]
+      const rate = d?.rates?.JPY || d?.rates?.jpy;
+      if (rate) {
+        usdJpy = rate;
         const el = document.getElementById('fxRate');
         if (el) el.textContent = `USD/JPY ¥${usdJpy.toFixed(2)}`;
       }
-    }).catch(() => {});
+    }).catch(() => {
+      // フォールバック: 別のAPIを試す
+      fetch('https://open.er-api.com/v6/latest/USD')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.rates?.JPY) {
+            usdJpy = d.rates.JPY;
+            const el = document.getElementById('fxRate');
+            if (el) el.textContent = `USD/JPY ¥${usdJpy.toFixed(2)}`;
+          }
+        }).catch(() => {});
+    });
 
   // ② ビットバンク価格取得（bitbankのみ）
   const bbCoins = COINS.filter(c => !c.src);
@@ -1147,6 +1160,16 @@ async function loadFromSupabase() {
     if (data) {
       try { spots = JSON.parse(data.spots || '[]'); } catch { spots = []; }
       try { margins = JSON.parse(data.margins || '[]'); } catch { margins = []; }
+      // CSV データも復元
+      if (data.csv_data) {
+        try {
+          const csv = JSON.parse(data.csv_data);
+          csvRealized = csv.csvRealized || 0;
+          csvFee = csv.csvFee || 0;
+          csvInterest = csv.csvInterest || 0;
+          restoreCsvDisplay(csv);
+        } catch {}
+      }
       renderSpots();
       renderMargins();
       updateSummary();
@@ -1157,9 +1180,42 @@ async function loadFromSupabase() {
 async function saveToSupabase() {
   if (!sbClient) return;
   try {
-    const payload = { id: SB_ROW_ID, spots: JSON.stringify(spots), margins: JSON.stringify(margins) };
+    const csvPayload = JSON.stringify({
+      csvRealized, csvFee, csvInterest,
+      count: document.getElementById('csvCount')?.textContent || '',
+      period: document.getElementById('csvPeriodDisplay')?.textContent || '',
+      realizedDisp: document.getElementById('csvRealizedDisplay')?.textContent || '',
+      feeDisp: document.getElementById('csvFeeDisplay')?.textContent || '',
+      interestDisp: document.getElementById('csvInterestDisplay')?.textContent || '',
+    });
+    const payload = {
+      id: SB_ROW_ID,
+      spots: JSON.stringify(spots),
+      margins: JSON.stringify(margins),
+      csv_data: csvPayload,
+    };
     await sbClient.from('portfolio').upsert(payload, { onConflict: 'id' });
   } catch(e) { console.error('save error:', e); }
+}
+
+function restoreCsvDisplay(csv) {
+  const el = document.getElementById('csvResult');
+  if (!el || (!csv.csvRealized && !csv.csvFee && !csv.csvInterest)) return;
+  el.style.display = 'block';
+  const safe = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+  safe('csvCount', csv.count || '');
+  safe('csvPeriodDisplay', csv.period || '');
+  const rEl = document.getElementById('csvRealizedDisplay');
+  if (rEl) { rEl.textContent = csv.realizedDisp || ''; rEl.style.color = csv.csvRealized >= 0 ? 'var(--green)' : 'var(--red)'; }
+  const fEl = document.getElementById('csvFeeDisplay');
+  if (fEl) { fEl.textContent = csv.feeDisp || ''; fEl.style.color = 'var(--red)'; }
+  const iEl = document.getElementById('csvInterestDisplay');
+  if (iEl) { iEl.textContent = csv.interestDisp || ''; iEl.style.color = csv.csvInterest ? 'var(--red)' : 'var(--text)'; }
+  const drop = document.getElementById('csvDropArea');
+  if (drop) {
+    drop.style.borderColor = 'var(--green)';
+    drop.innerHTML = `✅ 保存済みCSVデータを復元しました<br><span style="font-size:11px;color:var(--text3);">別のファイルを読み込む場合はタップ</span>`;
+  }
 }
 
 // ────────────────────────────────
@@ -1192,26 +1248,8 @@ function loadData() {
       csvRealized = csv.csvRealized || 0;
       csvFee = csv.csvFee || 0;
       csvInterest = csv.csvInterest || 0;
-      // 復元表示
-      if (csvRealized !== 0 || csvFee !== 0 || csvInterest !== 0) {
-        const el = document.getElementById('csvResult');
-        if (el) {
-          el.style.display = 'block';
-          document.getElementById('csvCount').textContent = csv.count || '';
-          document.getElementById('csvPeriodDisplay').textContent = csv.period || '';
-          const rEl = document.getElementById('csvRealizedDisplay');
-          rEl.textContent = csv.realizedDisp || '';
-          rEl.style.color = csvRealized >= 0 ? 'var(--green)' : 'var(--red)';
-          const fEl = document.getElementById('csvFeeDisplay');
-          fEl.textContent = csv.feeDisp || '';
-          fEl.style.color = 'var(--red)';
-          const iEl = document.getElementById('csvInterestDisplay');
-          iEl.textContent = csv.interestDisp || '';
-          iEl.style.color = csvInterest ? 'var(--red)' : 'var(--text)';
-          document.getElementById('csvDropArea').style.borderColor = 'var(--green)';
-          document.getElementById('csvDropArea').innerHTML = `✅ 保存済みCSVデータを復元しました<br><span style="font-size:11px;color:var(--text3);">別のファイルを読み込む場合はタップ</span>`;
-        }
-      }
+      // DOMが準備できてから復元
+      setTimeout(() => restoreCsvDisplay(csv), 50);
     }
   } catch {}
 }
@@ -1219,6 +1257,14 @@ function loadData() {
 // ────────────────────────────────
 // 初期化
 // ────────────────────────────────
+function fixStickyTop() {
+  const header = document.querySelector('.header');
+  const summary = document.getElementById('summaryCards');
+  if (header && summary) {
+    summary.style.top = header.offsetHeight + 'px';
+  }
+}
+
 populateCoinSelect();
 loadData();
 renderSpots();
@@ -1236,6 +1282,10 @@ if (savedSbUrl && savedSbKey) {
   document.getElementById('sbSave').checked = true;
   connectSupabase();
 }
+
+// ヘッダー高さに合わせてstickyを調整
+setTimeout(fixStickyTop, 100);
+window.addEventListener('resize', fixStickyTop);
 </script>
 </body>
 </html>
