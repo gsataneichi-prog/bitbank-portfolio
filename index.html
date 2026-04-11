@@ -556,6 +556,41 @@ function pnlSign(v) { return v >= 0 ? '+' : ''; }
 function uid() { return Date.now() + Math.random().toString(36).slice(2); }
 
 // ────────────────────────────────
+// ドル円レート取得
+// ────────────────────────────────
+async function fetchUsdJpy() {
+  const apis = [
+    // CoinGeckoからBTC価格(USD/JPY)を逆算
+    async () => {
+      const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      const d = await r.json();
+      return d.rates?.JPY;
+    },
+    async () => {
+      const r = await fetch('https://open.er-api.com/v6/latest/USD');
+      const d = await r.json();
+      return d.rates?.JPY;
+    },
+    async () => {
+      const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=JPY');
+      const d = await r.json();
+      return d.rates?.JPY;
+    },
+  ];
+  for (const api of apis) {
+    try {
+      const rate = await Promise.race([api(), new Promise((_, r) => setTimeout(() => r(), 5000))]);
+      if (rate && rate > 50) {
+        usdJpy = rate;
+        const el = document.getElementById('fxRate');
+        if (el) el.textContent = `USD/JPY ¥${usdJpy.toFixed(2)}`;
+        return;
+      }
+    } catch {}
+  }
+}
+
+// ────────────────────────────────
 // 価格取得
 // ────────────────────────────────
 async function refreshPrices() {
@@ -563,31 +598,8 @@ async function refreshPrices() {
   btn.textContent = '取得中...'; btn.disabled = true;
   const results = {}, openResults = {};
 
-  // ① ドル円（バックグラウンド）- API修正
-  fetch('https://api.frankfurter.dev/v2/rates?base=USD&quotes=JPY')
-    .then(r => r.ok ? r.json() : null)
-    .then(d => {
-      // v2はrates.JPY または rates["JPY"]
-      const rate = d?.rates?.JPY || d?.rates?.jpy;
-      if (rate) {
-        usdJpy = rate;
-        const el = document.getElementById('fxRate');
-        if (el) el.textContent = `USD/JPY ¥${usdJpy.toFixed(2)}`;
-      }
-    }).catch(() => {
-      // フォールバック: 別のAPIを試す
-      fetch('https://open.er-api.com/v6/latest/USD')
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (d?.rates?.JPY) {
-            usdJpy = d.rates.JPY;
-            const el = document.getElementById('fxRate');
-            if (el) el.textContent = `USD/JPY ¥${usdJpy.toFixed(2)}`;
-          }
-        }).catch(() => {});
-    });
-
-  // ② ビットバンク価格取得（bitbankのみ）
+  // ① ドル円（バックグラウンド）
+  fetchUsdJpy();
   const bbCoins = COINS.filter(c => !c.src);
   await Promise.all(bbCoins.map(async c => {
     try {
@@ -1261,7 +1273,8 @@ function fixStickyTop() {
   const header = document.querySelector('.header');
   const summary = document.getElementById('summaryCards');
   if (header && summary) {
-    summary.style.top = header.offsetHeight + 'px';
+    const h = header.getBoundingClientRect().height;
+    summary.style.top = Math.round(h) + 'px';
   }
 }
 
@@ -1283,9 +1296,12 @@ if (savedSbUrl && savedSbKey) {
   connectSupabase();
 }
 
-// ヘッダー高さに合わせてstickyを調整
+// ヘッダー高さに合わせてstickyを調整（複数タイミングで実行）
+fixStickyTop();
 setTimeout(fixStickyTop, 100);
+setTimeout(fixStickyTop, 500);
 window.addEventListener('resize', fixStickyTop);
+window.addEventListener('orientationchange', () => setTimeout(fixStickyTop, 300));
 </script>
 </body>
 </html>
