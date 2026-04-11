@@ -299,9 +299,14 @@
     <div class="slabel">総資産評価額</div>
     <div class="svalue" id="totalAll">¥—</div>
     <div class="ssub" id="totalSub">スポット合計</div>
+    <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);">
+      <div style="font-size:10px;letter-spacing:.15em;color:var(--text3);margin-bottom:2px;">前日比（当日始値比）</div>
+      <div style="font-size:14px;font-weight:700;font-family:monospace;" id="dayChangeJpy">¥—</div>
+      <div style="font-size:12px;font-family:monospace;" id="dayChangePct"></div>
+    </div>
   </div>
   <div class="scard">
-    <div class="slabel">スポット損益</div>
+    <div class="slabel">スポット損益（取得単価比）</div>
     <div class="svalue" id="totalPnl" style="font-size:18px;">¥—</div>
     <div class="ssub" id="totalPnlPct"></div>
   </div>
@@ -495,6 +500,7 @@ const EX_COLORS = { bitbank: '#3b82f6', coincheck: '#f59e0b', binancejp: '#22c55
 // 状態
 // ────────────────────────────────
 let prices = {};
+let opens = {}; // 24h始値（前日比計算用）
 let spots = []; // { id, exchange, pair, label, name, amount, avgPrice }
 let margins = []; // { id, pair, side, size, entry, leverage }
 let midCounter = 1;
@@ -523,17 +529,19 @@ function uid() { return Date.now() + Math.random().toString(36).slice(2); }
 async function refreshPrices() {
   const btn = document.getElementById('refreshBtn');
   btn.textContent = '取得中...'; btn.disabled = true;
-  const results = {};
+  const results = {}, openResults = {};
   await Promise.all(COINS.map(async c => {
     try {
       const res = await fetch(`https://public.bitbank.cc/${c.id}/ticker`);
       if (res.ok) {
         const d = await res.json();
         results[c.id] = parseFloat(d.data?.last);
+        openResults[c.id] = parseFloat(d.data?.open); // 当日始値
       }
     } catch {}
   }));
   prices = results;
+  opens = openResults;
   updateTicker();
   updatePriceTable();
   renderSpots();
@@ -541,14 +549,30 @@ async function refreshPrices() {
   updateSummary();
   document.getElementById('updateInfo').textContent =
     new Date().toLocaleTimeString('ja-JP') + ' 更新 (30秒毎に自動更新)';
-  btn.textContent = '🔄 価格更新'; btn.disabled = false;
+  btn.textContent = '🔄'; btn.disabled = false;
 }
 
 function updateTicker() {
-  const show = ['btc_jpy','eth_jpy','xrp_jpy','sol_jpy','doge_jpy'];
-  document.getElementById('ticker').innerHTML = show.map(p => {
-    const c = COINS.find(x => x.id === p);
-    return `<div class="ticker-item"><div class="tdot"></div><span style="color:var(--text3);font-size:10px;">${c.label}</span> ¥${fmtPrice(prices[p])}</div>`;
+  // 保有コインのpairを重複なしで取得
+  const heldPairs = [...new Set(spots.map(s => s.pair))];
+  const show = heldPairs.length > 0 ? heldPairs : ['btc_jpy','eth_jpy','xrp_jpy'];
+
+  document.getElementById('ticker').innerHTML = show.map(pair => {
+    const c = COINS.find(x => x.id === pair);
+    if (!c) return '';
+    const price = prices[pair];
+    const open = opens[pair];
+    const chg = price && open && open > 0 ? (price - open) / open * 100 : null;
+    const chgStr = chg !== null
+      ? `<span style="color:${chg >= 0 ? 'var(--green)' : 'var(--red)'}; font-size:11px; margin-left:3px;">${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%</span>`
+      : '';
+    return `
+      <div class="ticker-item">
+        <div class="tdot"></div>
+        <span style="color:var(--text3);font-size:11px;">${c.label}</span>
+        <span style="font-weight:600;">¥${fmtPrice(price)}</span>
+        ${chgStr}
+      </div>`;
   }).join('');
 }
 
@@ -675,16 +699,37 @@ function renderSpots() {
 // サマリー更新
 // ────────────────────────────────
 function updateSummary() {
-  let totalVal = 0, totalCost = 0;
+  let totalVal = 0, totalCost = 0, totalOpenVal = 0;
   spots.forEach(s => {
     const p = prices[s.pair];
+    const o = opens[s.pair];
     if (p && s.amount) { totalVal += p * s.amount; }
     if (s.avgPrice && s.amount) { totalCost += s.avgPrice * s.amount; }
+    if (o && s.amount) { totalOpenVal += o * s.amount; }
   });
+
   const pnl = totalVal && totalCost ? totalVal - totalCost : null;
   const pct = pnl !== null && totalCost ? pnl / totalCost * 100 : null;
 
+  // 前日比（当日始値比）
+  const dayChg = totalVal && totalOpenVal ? totalVal - totalOpenVal : null;
+  const dayPct = dayChg !== null && totalOpenVal ? dayChg / totalOpenVal * 100 : null;
+
   document.getElementById('totalAll').textContent = totalVal ? '¥'+fmt(totalVal,0) : '¥—';
+
+  // 前日比表示
+  const dcJpy = document.getElementById('dayChangeJpy');
+  const dcPct = document.getElementById('dayChangePct');
+  if (dayChg !== null) {
+    dcJpy.textContent = pnlSign(dayChg)+'¥'+fmt(dayChg,0);
+    dcJpy.style.color = pnlColor(dayChg);
+    dcPct.textContent = pnlSign(dayPct)+dayPct.toFixed(2)+'%';
+    dcPct.style.color = pnlColor(dayChg);
+  } else {
+    dcJpy.textContent = '¥—'; dcJpy.style.color = 'var(--text)';
+    dcPct.textContent = '';
+  }
+
   const pnlEl = document.getElementById('totalPnl');
   pnlEl.textContent = pnl !== null ? pnlSign(pnl)+'¥'+fmt(pnl,0) : '¥—';
   pnlEl.style.color = pnl !== null ? pnlColor(pnl) : 'var(--text)';
@@ -701,7 +746,6 @@ function updateSummary() {
     }
   });
 
-  // CSV由来の損益
   const mTotal = unrealized + csvRealized + csvFee + csvInterest;
 
   const setEl = (id, val, colored=true) => {
